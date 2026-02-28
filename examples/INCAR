@@ -1,0 +1,26 @@
+# Basic DFT calculation
+
+SYSTEM = Si bulk calculation
+ENCUT = 520
+ISMEAR = 0
+SIGMA = 0.05
+EDIFF = 1E-6
+
+# Electronic steps
+NELM = 100
+NELMIN = 4
+ALGO = Normal
+
+# Ionic relaxation
+IBRION = 2
+NSW = 100
+ISIF = 3
+EDIFFG = -1E-2
+
+# Output
+LWAVE = .FALSE.
+LCHARG = .TRUE.
+LORBIT = 11
+
+# Parallelization
+NCORE = 4
