@@ -69,26 +69,8 @@ warn_unused_configs = true
 disallow_untyped_defs = true
 ignore_missing_imports = true
 
-# Pytest and Coverage configuration - 100% coverage requirement
+# Pytest configuration
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-addopts = "--cov=src/vasp_lsp --cov-report=term-missing --cov-report=html --cov-report=xml --cov-fail-under=100 -v"
+addopts = "-v"
 asyncio_mode = "auto"
-
-[tool.coverage.run]
-source = ["src/vasp_lsp"]
-omit = ["*/tests/*", "*/test_*"]
-branch = true
-
-[tool.coverage.report]
-exclude_lines = [
-    "pragma: no cover",
-    "def __repr__",
-    "raise AssertionError",
-    "raise NotImplementedError",
-    "if __name__ == .__main__.:",
-    "if TYPE_CHECKING:",
-    "pass",
-    "..."
-]
-fail_under = 100

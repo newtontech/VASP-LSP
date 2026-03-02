@@ -20,13 +20,13 @@ from lsprotocol.types import (
     DidOpenTextDocumentParams,
     DidChangeTextDocumentParams,
     DidSaveTextDocumentParams,
-    InitializeParams,
     InitializeResult,
     ServerCapabilities,
     TextDocumentSyncKind,
     TextDocumentSyncOptions,
 )
 from pygls.server import LanguageServer
+from pygls.protocol import LanguageServerProtocol
 
 from .features.completion import CompletionProvider
 from .features.hover import HoverProvider
@@ -57,30 +57,31 @@ class VASPLanguageServer(LanguageServer):
         """Cache document content."""
         self.documents[uri] = content
         
+    def _initialize(self, params):
+        """Handle server initialization."""
+        logger.info(f"Initializing VASP-LSP v0.1.0")
+        client_name = "Unknown"
+        if params.client_info:
+            client_name = params.client_info.name
+        logger.info(f"Client: {client_name}")
+        
+        capabilities = ServerCapabilities(
+            text_document_sync=TextDocumentSyncOptions(
+                open_close=True,
+                change=TextDocumentSyncKind.Full,
+            ),
+            completion_provider=CompletionOptions(
+                resolve_provider=False,
+                trigger_characters=["=", " ", "."],
+            ),
+            hover_provider=True,
+        )
+        
+        return InitializeResult(capabilities=capabilities)
+
 
 # Create server instance
 server = VASPLanguageServer()
-
-
-@server.feature(InitializeParams)
-def initialize(params: InitializeParams) -> InitializeResult:
-    """Handle server initialization."""
-    logger.info(f"Initializing VASP-LSP v0.1.0")
-    logger.info(f"Client: {params.client_info.name if params.client_info else 'Unknown'}")
-    
-    capabilities = ServerCapabilities(
-        text_document_sync=TextDocumentSyncOptions(
-            open_close=True,
-            change=TextDocumentSyncKind.FULL,
-        ),
-        completion_provider=CompletionOptions(
-            resolve_provider=False,
-            trigger_characters=["=", " ", "."],
-        ),
-        hover_provider=True,
-    )
-    
-    return InitializeResult(capabilities=capabilities)
 
 
 @server.feature(TEXT_DOCUMENT_DID_OPEN)

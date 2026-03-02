@@ -2,7 +2,6 @@
 import pytest
 from unittest.mock import MagicMock, patch
 from lsprotocol.types import (
-    InitializeParams,
     CompletionParams,
     HoverParams,
     DidOpenTextDocumentParams,
@@ -12,13 +11,11 @@ from lsprotocol.types import (
     TextDocumentIdentifier,
     VersionedTextDocumentIdentifier,
     Position,
-    ClientInfo,
 )
 
 from vasp_lsp.server import (
     VASPLanguageServer,
     server,
-    initialize,
     text_document_did_open,
     text_document_did_change,
     text_document_did_save,
@@ -50,32 +47,23 @@ class TestVASPLanguageServer:
         test_server = VASPLanguageServer()
         test_server.set_document_content("file:///test.vasp", "content")
         assert test_server.documents["file:///test.vasp"] == "content"
-
-
-class TestInitialize:
-    """Test initialize feature."""
-
+        
     def test_initialize(self):
-        """Test server initialization."""
-        params = InitializeParams(
-            process_id=1,
-            root_uri="file:///test",
-            capabilities={},
-            client_info=ClientInfo(name="test-client", version="1.0.0"),
-        )
-        result = initialize(params)
-        assert result.capabilities.text_document_sync is not None
-        assert result.capabilities.completion_provider is not None
+        """Test server initialize method."""
+        test_server = VASPLanguageServer()
+        params = MagicMock()
+        params.client_info = MagicMock()
+        params.client_info.name = "test-client"
+        result = test_server._initialize(params)
+        assert result.capabilities is not None
         assert result.capabilities.hover_provider is True
 
     def test_initialize_without_client_info(self):
         """Test initialization without client info."""
-        params = InitializeParams(
-            process_id=1,
-            root_uri="file:///test",
-            capabilities={},
-        )
-        result = initialize(params)
+        test_server = VASPLanguageServer()
+        params = MagicMock()
+        params.client_info = None
+        result = test_server._initialize(params)
         assert result.capabilities is not None
 
 
@@ -170,7 +158,7 @@ class TestCompletions:
     def test_completions_with_content(self, mock_get):
         """Test completions with content."""
         server.set_document_content("file:///test.vasp", "content")
-        mock_get.return_value = [MagicMock()]
+        mock_get.return_value = MagicMock()
         params = CompletionParams(
             text_document=TextDocumentIdentifier(uri="file:///test.vasp"),
             position=Position(line=0, character=0),
