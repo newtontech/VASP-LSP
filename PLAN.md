@@ -16,22 +16,38 @@ This is the development plan for vasp-lsp - a Language Server Protocol implement
 
 ## Phase 3: Advanced Features (In Progress)
 - [x] Hover documentation for INCAR tags
-- [ ] Code formatting
-- [ ] Quick fixes
-- [ ] Improve test coverage to 100%
+- [ ] Code formatting (planned)
+- [ ] Quick fixes (planned)
+- [ ] Improve test coverage to 100% (current: 81%)
 
 ## Testing
 - Run tests: `pytest tests/`
 - Check coverage: `pytest --cov`
-- Current coverage: 70%
+- Current coverage: 81% (61 tests passing)
+
+## Coverage Analysis (2026-03-02)
+Files needing additional tests:
+- `src/vasp_lsp/features/completion.py` (51% coverage)
+- `src/vasp_lsp/server.py` (47% coverage)
+- `src/vasp_lsp/parsers/kpoints_parser.py` (61% coverage)
+- `src/vasp_lsp/features/hover.py` (69% coverage)
+- `src/vasp_lsp/features/diagnostics.py` (77% coverage)
 
 ## Maintenance
 - Nightly automated maintenance at random time
 - See .maintenance/last-run.md for last check
 
-## Recent Updates (2026-03-02)
-- Fixed pygls compatibility issue (InitializeParams → "initialize")
-- Fixed test_basic.py syntax error
-- Added comprehensive parser tests
-- Added LSP feature tests
-- All 61 tests passing
+## Recent Updates (2026-03-02 22:41)
+- ✅ All 61 tests passing
+- ✅ Test coverage improved to 81%
+- ✅ GitHub issues disabled, no PRs pending
+- ⏳ Codex development session attempted (network issues encountered)
+- 📋 Remaining tasks documented for next session
+
+## Next Steps
+1. Add tests for LSP handlers (initialize, did_open, did_change, etc.)
+2. Add tests for completion edge cases
+3. Add tests for hover edge cases
+4. Add tests for kpoints parser error handling
+5. Implement code formatting feature
+6. Implement quick fixes feature
