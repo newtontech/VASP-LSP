@@ -52,3 +52,14 @@ MIT License
 
 - Inspired by [cp2k-language-server](https://github.com/cp2k/cp2k-input-tools)
 - Built with [pygls](https://github.com/openlawlibrary/pygls)
+
+## Testing
+
+Run tests with:
+
+```bash
+pytest --cov=src/vasp_lsp --cov-report=term-missing
+```
+
+Current coverage: 93% (145 tests passing)
+EOFTEST
