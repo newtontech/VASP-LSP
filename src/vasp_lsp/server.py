@@ -62,7 +62,7 @@ class VASPLanguageServer(LanguageServer):
 server = VASPLanguageServer()
 
 
-@server.feature(InitializeParams)
+@server.feature("initialize")
 def initialize(params: InitializeParams) -> InitializeResult:
     """Handle server initialization."""
     logger.info(f"Initializing VASP-LSP v0.1.0")
