@@ -71,7 +71,7 @@ def initialize(params: InitializeParams) -> InitializeResult:
     capabilities = ServerCapabilities(
         text_document_sync=TextDocumentSyncOptions(
             open_close=True,
-            change=TextDocumentSyncKind.FULL,
+            change=TextDocumentSyncKind.Full,
         ),
         completion_provider=CompletionOptions(
             resolve_provider=False,
