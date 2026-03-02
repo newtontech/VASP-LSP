@@ -251,7 +251,7 @@ class KPOINTSParser:
                 parts = self.lines[line_idx].strip().split()
                 if len(parts) < 4:
                     self.errors.append({
-                        'message': f"K-point line must have at least 4 values (kx, ky, kz, w)",
+                        'message': "K-point line must have at least 4 values (kx, ky, kz, w)",
                         'line': line_idx + 1,
                         'severity': 'error'
                     })

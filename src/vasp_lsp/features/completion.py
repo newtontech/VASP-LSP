@@ -1,15 +1,14 @@
 """Completion provider for VASP-LSP."""
 
-from typing import List, Optional, Dict, Any
+from typing import List
 from lsprotocol.types import (
     CompletionItem,
     CompletionItemKind,
     CompletionList,
     CompletionParams,
-    Position,
 )
 
-from ..schemas.incar_tags import INCAR_TAGS, INCAR_TAG_LIST, INCARTag
+from ..schemas.incar_tags import INCAR_TAGS, INCAR_TAG_LIST
 
 
 class CompletionProvider:

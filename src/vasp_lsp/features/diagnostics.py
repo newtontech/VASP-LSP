@@ -4,7 +4,7 @@ from typing import List
 from lsprotocol.types import Diagnostic, DiagnosticSeverity, Range, Position
 
 from ..parsers.incar_parser import INCARParser
-from ..schemas.incar_tags import INCAR_TAGS, get_tag_info
+from ..schemas.incar_tags import get_tag_info
 
 
 class DiagnosticsProvider:

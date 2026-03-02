@@ -26,7 +26,6 @@ from lsprotocol.types import (
     TextDocumentSyncOptions,
 )
 from pygls.server import LanguageServer
-from pygls.protocol import LanguageServerProtocol
 
 from .features.completion import CompletionProvider
 from .features.hover import HoverProvider
@@ -59,7 +58,7 @@ class VASPLanguageServer(LanguageServer):
         
     def _initialize(self, params):
         """Handle server initialization."""
-        logger.info(f"Initializing VASP-LSP v0.1.0")
+        logger.info("Initializing VASP-LSP v0.1.0")
         client_name = "Unknown"
         if params.client_info:
             client_name = params.client_info.name

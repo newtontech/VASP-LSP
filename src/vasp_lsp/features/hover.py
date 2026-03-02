@@ -3,7 +3,7 @@
 from typing import Optional
 from lsprotocol.types import Hover, HoverParams, MarkupContent, MarkupKind, Position
 
-from ..schemas.incar_tags import INCAR_TAGS, get_tag_info
+from ..schemas.incar_tags import get_tag_info
 
 
 class HoverProvider:

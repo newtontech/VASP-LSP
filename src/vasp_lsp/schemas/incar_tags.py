@@ -4,8 +4,8 @@ This module contains structured metadata for VASP INCAR parameters,
 enabling autocomplete, validation, and documentation features.
 """
 
-from typing import Dict, List, Optional, Any, Union
-from dataclasses import dataclass, field
+from typing import Dict, List, Optional, Any
+from dataclasses import dataclass
 
 
 @dataclass

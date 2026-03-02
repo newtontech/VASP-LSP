@@ -1,7 +1,7 @@
 """INCAR file parser for VASP-LSP."""
 
 import re
-from typing import Dict, List, Optional, Tuple, Any
+from typing import Dict, List, Optional, Any
 from dataclasses import dataclass
 
 

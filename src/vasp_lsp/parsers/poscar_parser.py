@@ -1,7 +1,6 @@
 """POSCAR file parser for VASP-LSP."""
 
-import re
-from typing import List, Optional, Tuple, Dict, Any
+from typing import List, Optional, Dict, Any
 from dataclasses import dataclass
 
 
