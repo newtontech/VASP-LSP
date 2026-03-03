@@ -359,11 +359,6 @@ class QuickFixesProvider:
         # Simple character-based similarity
         len1, len2 = len(s1), len(s2)
         max_len = max(len1, len2)
-        
-        if max_len == 0:
-            return 1.0
-        
-        # Count matching characters
         matches = sum(c1 == c2 for c1, c2 in zip(s1, s2))
         
         return matches / max_len

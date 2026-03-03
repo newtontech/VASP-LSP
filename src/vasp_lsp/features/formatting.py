@@ -105,10 +105,6 @@ class FormattingProvider:
             'NCORE', 'NPAR', 'KPAR', 'LPLANE', 'LSCALU', 'NSIM'
         }
         
-        output_tags = {
-            'NWRITE', 'LWAVE', 'LCHARG', 'LVHAR', 'LVTOT', 'LELF', 'LORBIT',
-            'NEDOS', 'EMIN', 'EMAX'
-        }
         
         for name, param in params.items():
             if name in electronic_tags:
@@ -119,8 +115,6 @@ class FormattingProvider:
                 mixing.append(param)
             elif name in parallel_tags:
                 parallel.append(param)
-            elif name in output_tags:
-                output.append(param)
             else:
                 other.append(param)
         
@@ -141,7 +135,6 @@ class FormattingProvider:
         format_group("Ionic Relaxation", ionic)
         format_group("Mixing and Convergence", mixing)
         format_group("Parallelization", parallel)
-        format_group("Output Control", output)
         format_group("Other Parameters", other)
         
         if formatted_lines and formatted_lines[-1] == "":
@@ -207,8 +200,6 @@ class FormattingProvider:
                         formatted_lines.append(lines[i])
                 else:
                     formatted_lines.append(lines[i])
-            else:
-                formatted_lines.append("     0.0000000000    0.0000000000    0.0000000000")
         
         # Line 6: Element symbols (if present)
         if len(lines) > 5:
