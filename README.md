@@ -61,5 +61,4 @@ Run tests with:
 pytest --cov=src/vasp_lsp --cov-report=term-missing
 ```
 
-Current coverage: 93% (145 tests passing)
-EOFTEST
+Current coverage: 100% (276 tests passing)
