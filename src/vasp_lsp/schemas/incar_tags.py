@@ -513,10 +513,10 @@ INCAR_TAG_LIST: List[str] = list(INCAR_TAGS.keys())
 
 def get_tag_info(name: str) -> Optional[INCARTag]:
     """Get metadata for a specific INCAR tag.
-    
+
     Args:
         name: The INCAR tag name (case-insensitive).
-        
+
     Returns:
         INCARTag object if found, None otherwise.
     """
@@ -525,10 +525,10 @@ def get_tag_info(name: str) -> Optional[INCARTag]:
 
 def search_tags(query: str) -> List[INCARTag]:
     """Search for INCAR tags matching a query string.
-    
+
     Args:
         query: Search string to match against tag names and descriptions.
-        
+
     Returns:
         List of matching INCARTag objects.
     """

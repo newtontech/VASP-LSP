@@ -26,12 +26,12 @@ class CompletionProvider:
         document_uri: str
     ) -> CompletionList:
         """Get completion items for the current cursor position.
-        
+
         Args:
             params: Completion parameters from LSP client.
             document_content: Full document content.
             document_uri: Document URI to determine file type.
-            
+
         Returns:
             CompletionList with relevant items.
         """
@@ -59,10 +59,10 @@ class CompletionProvider:
 
     def _get_file_type(self, uri: str) -> str:
         """Determine file type from URI.
-        
+
         Args:
             uri: Document URI.
-            
+
         Returns:
             File type string (INCAR, POSCAR, KPOINTS, or UNKNOWN).
         """
@@ -88,11 +88,11 @@ class CompletionProvider:
 
     def _get_incar_completions(self, line_prefix: str, current_line: str) -> List[CompletionItem]:
         """Get completion items for INCAR files.
-        
+
         Args:
             line_prefix: Text before cursor on current line.
             current_line: Full current line.
-            
+
         Returns:
             List of completion items.
         """
@@ -151,10 +151,10 @@ class CompletionProvider:
 
     def _get_poscar_completions(self, line_number: int) -> List[CompletionItem]:
         """Get completion items for POSCAR files.
-        
+
         Args:
             line_number: Current line number.
-            
+
         Returns:
             List of completion items.
         """
@@ -215,10 +215,10 @@ class CompletionProvider:
 
     def _get_kpoints_completions(self, line_number: int) -> List[CompletionItem]:
         """Get completion items for KPOINTS files.
-        
+
         Args:
             line_number: Current line number.
-            
+
         Returns:
             List of completion items.
         """

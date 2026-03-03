@@ -24,12 +24,12 @@ class FormattingProvider:
         options: Optional[dict] = None
     ) -> List[TextEdit]:
         """Format the entire document.
-        
+
         Args:
             document_content: Full document content.
             document_uri: Document URI to determine file type.
             options: Formatting options (tabSize, insertSpaces, etc.).
-            
+
         Returns:
             List of text edits to apply.
         """
@@ -59,7 +59,7 @@ class FormattingProvider:
 
     def _format_incar(self, content: str) -> List[TextEdit]:
         """Format INCAR file content.
-        
+
         Formatting rules:
         - Sort parameters alphabetically within groups
         - Consistent spacing around =
@@ -80,7 +80,6 @@ class FormattingProvider:
         ionic = []
         mixing = []
         parallel = []
-        output = []
         other = []
 
         electronic_tags = {
@@ -166,7 +165,7 @@ class FormattingProvider:
 
     def _format_poscar(self, content: str) -> List[TextEdit]:
         """Format POSCAR file content.
-        
+
         Formatting rules:
         - Ensure consistent column alignment
         - Proper spacing between sections
@@ -270,7 +269,7 @@ class FormattingProvider:
 
     def _format_kpoints(self, content: str) -> List[TextEdit]:
         """Format KPOINTS file content.
-        
+
         Formatting rules:
         - Ensure proper section separation
         - Consistent k-point grid formatting

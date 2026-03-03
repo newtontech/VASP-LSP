@@ -21,12 +21,12 @@ class HoverProvider:
         document_uri: str
     ) -> Optional[Hover]:
         """Get hover documentation for the current cursor position.
-        
+
         Args:
             params: Hover parameters from LSP client.
             document_content: Full document content.
             document_uri: Document URI to determine file type.
-            
+
         Returns:
             Hover object with documentation, or None if no relevant info.
         """
@@ -44,10 +44,10 @@ class HoverProvider:
 
     def _get_file_type(self, uri: str) -> str:
         """Determine file type from URI.
-        
+
         Args:
             uri: Document URI.
-            
+
         Returns:
             File type string.
         """
@@ -64,11 +64,11 @@ class HoverProvider:
 
     def _get_incar_hover(self, content: str, position: Position) -> Optional[Hover]:
         """Get hover info for INCAR files.
-        
+
         Args:
             content: Document content.
             position: Cursor position.
-            
+
         Returns:
             Hover object if a tag is found under cursor.
         """
@@ -97,11 +97,11 @@ class HoverProvider:
 
     def _get_poscar_hover(self, content: str, position: Position) -> Optional[Hover]:
         """Get hover info for POSCAR files.
-        
+
         Args:
             content: Document content.
             position: Cursor position.
-            
+
         Returns:
             Hover object with line-specific documentation.
         """
@@ -137,11 +137,11 @@ class HoverProvider:
 
     def _get_kpoints_hover(self, content: str, position: Position) -> Optional[Hover]:
         """Get hover info for KPOINTS files.
-        
+
         Args:
             content: Document content.
             position: Cursor position.
-            
+
         Returns:
             Hover object with line-specific documentation.
         """
@@ -167,11 +167,11 @@ class HoverProvider:
 
     def _get_word_at_position(self, line: str, column: int) -> str:
         """Extract the word at the given column position.
-        
+
         Args:
             line: The line text.
             column: Column position (0-indexed).
-            
+
         Returns:
             Word at position, or empty string.
         """

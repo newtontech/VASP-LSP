@@ -22,7 +22,7 @@ class POSCARParser:
 
     def __init__(self, content: str):
         """Initialize parser with POSCAR file content.
-        
+
         Args:
             content: The full content of the POSCAR file.
         """
@@ -33,7 +33,7 @@ class POSCARParser:
 
     def parse(self) -> Optional[POSCARData]:
         """Parse the POSCAR file content.
-        
+
         Returns:
             POSCARData object if successful, None otherwise.
         """
@@ -187,7 +187,7 @@ class POSCARParser:
 
     def get_errors(self) -> List[Dict[str, Any]]:
         """Get all parse errors.
-        
+
         Returns:
             List of error dictionaries.
         """

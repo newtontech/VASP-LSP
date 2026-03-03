@@ -32,7 +32,7 @@ class KPOINTSParser:
 
     def __init__(self, content: str):
         """Initialize parser with KPOINTS file content.
-        
+
         Args:
             content: The full content of the KPOINTS file.
         """
@@ -43,7 +43,7 @@ class KPOINTSParser:
 
     def parse(self) -> Optional[KPOINTSData]:
         """Parse the KPOINTS file content.
-        
+
         Returns:
             KPOINTSData object if successful, None otherwise.
         """
@@ -129,11 +129,11 @@ class KPOINTSParser:
 
     def _parse_automatic_mode(self, comment: str, line_idx: int) -> Optional[KPOINTSData]:
         """Parse fully automatic k-point mode.
-        
+
         Args:
             comment: File comment.
             line_idx: Current line index.
-            
+
         Returns:
             KPOINTSData if successful.
         """
@@ -176,13 +176,13 @@ class KPOINTSParser:
         self, comment: str, nkpoints: int, line_idx: int, gamma_centered: bool
     ) -> Optional[KPOINTSData]:
         """Parse Gamma-centered or Monkhorst-Pack mode.
-        
+
         Args:
             comment: File comment.
             nkpoints: Number of k-points (should be 0 for automatic mesh).
             line_idx: Current line index.
             gamma_centered: Whether to use gamma-centered grid.
-            
+
         Returns:
             KPOINTSData if successful.
         """
@@ -225,13 +225,13 @@ class KPOINTSParser:
         self, comment: str, nkpoints: int, line_idx: int, reciprocal: bool
     ) -> Optional[KPOINTSData]:
         """Parse explicit k-point list mode.
-        
+
         Args:
             comment: File comment.
             nkpoints: Number of k-points.
             line_idx: Current line index.
             reciprocal: Whether coordinates are in reciprocal space.
-            
+
         Returns:
             KPOINTSData if successful.
         """
@@ -279,11 +279,11 @@ class KPOINTSParser:
 
     def _parse_line_mode(self, comment: str, line_idx: int) -> Optional[KPOINTSData]:
         """Parse line-mode for band structure.
-        
+
         Args:
             comment: File comment.
             line_idx: Current line index.
-            
+
         Returns:
             KPOINTSData if successful.
         """
@@ -294,11 +294,10 @@ class KPOINTSParser:
             line_idx += 1
 
             # Coordinate type
-            coord_line = self.lines[line_idx].strip().lower()
+            self.lines[line_idx].strip().lower()
             line_idx += 1
 
             kpoints = []
-            n_lines = 0
 
             while line_idx < len(self.lines):
                 line = self.lines[line_idx].strip()
@@ -328,7 +327,7 @@ class KPOINTSParser:
 
     def get_errors(self) -> List[Dict[str, Any]]:
         """Get all parse errors.
-        
+
         Returns:
             List of error dictionaries.
         """

@@ -34,13 +34,13 @@ class QuickFixesProvider:
         range: Range
     ) -> List[CodeAction]:
         """Get available code actions for the given diagnostics.
-        
+
         Args:
             document_content: Full document content.
             document_uri: Document URI to determine file type.
             diagnostics: List of diagnostics in the document.
             range: The range for which code actions are requested.
-            
+
         Returns:
             List of available code actions.
         """
@@ -283,7 +283,6 @@ class QuickFixesProvider:
         typo_fixes = {
             'ENCUTT': 'ENCUT',
             'ENCO': 'ENCUT',
-            'ENCUTT': 'ENCUT',
             'ISMER': 'ISMEAR',
             'ISMAER': 'ISMEAR',
             'SIGM': 'SIGMA',

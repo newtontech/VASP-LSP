@@ -32,7 +32,7 @@ class INCARParser:
 
     def __init__(self, content: str):
         """Initialize parser with INCAR file content.
-        
+
         Args:
             content: The full content of the INCAR file.
         """
@@ -43,7 +43,7 @@ class INCARParser:
 
     def parse(self) -> Dict[str, INCARParameter]:
         """Parse the INCAR file content.
-        
+
         Returns:
             Dictionary mapping parameter names to INCARParameter objects.
         """
@@ -74,11 +74,11 @@ class INCARParser:
 
     def _parse_line(self, line: str, line_num: int) -> Optional[INCARParameter]:
         """Parse a single INCAR line.
-        
+
         Args:
             line: The line content.
             line_num: The line number (1-indexed).
-            
+
         Returns:
             INCARParameter if a parameter is found, None otherwise.
         """
@@ -120,10 +120,10 @@ class INCARParser:
 
     def _parse_value(self, value_str: str) -> Any:
         """Parse an INCAR parameter value.
-        
+
         Args:
             value_str: The value string.
-            
+
         Returns:
             Parsed value (int, float, bool, or string).
         """
@@ -166,10 +166,10 @@ class INCARParser:
 
     def get_parameter(self, name: str) -> Optional[INCARParameter]:
         """Get a parameter by name.
-        
+
         Args:
             name: Parameter name (case-insensitive).
-            
+
         Returns:
             INCARParameter if found, None otherwise.
         """
@@ -177,10 +177,10 @@ class INCARParser:
 
     def has_parameter(self, name: str) -> bool:
         """Check if a parameter exists.
-        
+
         Args:
             name: Parameter name (case-insensitive).
-            
+
         Returns:
             True if parameter exists.
         """
@@ -188,7 +188,7 @@ class INCARParser:
 
     def get_all_parameters(self) -> Dict[str, INCARParameter]:
         """Get all parsed parameters.
-        
+
         Returns:
             Dictionary of all parameters.
         """
@@ -196,7 +196,7 @@ class INCARParser:
 
     def get_errors(self) -> List[Dict[str, Any]]:
         """Get all parse errors and warnings.
-        
+
         Returns:
             List of error dictionaries.
         """

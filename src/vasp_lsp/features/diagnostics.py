@@ -21,11 +21,11 @@ class DiagnosticsProvider:
         document_uri: str
     ) -> List[Diagnostic]:
         """Get diagnostics for the document.
-        
+
         Args:
             document_content: Full document content.
             document_uri: Document URI to determine file type.
-            
+
         Returns:
             List of diagnostic messages.
         """
