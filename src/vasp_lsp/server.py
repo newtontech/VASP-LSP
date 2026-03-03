@@ -15,6 +15,7 @@ from lsprotocol.types import (
     TEXT_DOCUMENT_DID_CHANGE,
     TEXT_DOCUMENT_DID_SAVE,
     TEXT_DOCUMENT_FORMATTING,
+    TEXT_DOCUMENT_CODE_ACTION,
     CompletionOptions,
     CompletionParams,
     HoverParams,
@@ -22,11 +23,13 @@ from lsprotocol.types import (
     DidChangeTextDocumentParams,
     DidSaveTextDocumentParams,
     DocumentFormattingParams,
+    CodeActionParams,
     InitializeParams,
     InitializeResult,
     ServerCapabilities,
     TextDocumentSyncKind,
     TextDocumentSyncOptions,
+    CodeActionOptions,
 )
 from pygls.server import LanguageServer
 
@@ -34,6 +37,7 @@ from .features.completion import CompletionProvider
 from .features.hover import HoverProvider
 from .features.diagnostics import DiagnosticsProvider
 from .features.formatting import FormattingProvider
+from .features.quickfixes import QuickFixesProvider
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -49,9 +53,11 @@ class VASPLanguageServer(LanguageServer):
         self.hover_provider = HoverProvider()
         self.diagnostics_provider = DiagnosticsProvider()
         self.formatting_provider = FormattingProvider()
+        self.quickfixes_provider = QuickFixesProvider()
         
         # Document cache
         self.documents: dict = {}
+        self.document_diagnostics: dict = {}
         
     def get_document_content(self, uri: str) -> Optional[str]:
         """Get document content from cache or workspace."""
@@ -61,6 +67,14 @@ class VASPLanguageServer(LanguageServer):
         """Cache document content."""
         self.documents[uri] = content
         
+    def set_document_diagnostics(self, uri: str, diagnostics: list):
+        """Cache document diagnostics for code actions."""
+        self.document_diagnostics[uri] = diagnostics
+        
+    def get_document_diagnostics(self, uri: str) -> list:
+        """Get cached document diagnostics."""
+        return self.document_diagnostics.get(uri, [])
+
 
 # Create server instance
 server = VASPLanguageServer()
@@ -83,6 +97,12 @@ def initialize(params: InitializeParams) -> InitializeResult:
         ),
         hover_provider=True,
         document_formatting_provider=True,
+        code_action_provider=CodeActionOptions(
+            code_action_kinds=[
+                "quickfix",
+                "source",
+            ]
+        ),
     )
     
     return InitializeResult(capabilities=capabilities)
@@ -162,9 +182,30 @@ def formatting(params: DocumentFormattingParams):
     return server.formatting_provider.format_document(content, uri, options)
 
 
+@server.feature(TEXT_DOCUMENT_CODE_ACTION)
+def code_action(params: CodeActionParams):
+    """Handle code action request."""
+    uri = params.text_document.uri
+    content = server.get_document_content(uri)
+    
+    if content is None:
+        return None
+    
+    # Get diagnostics for this document
+    diagnostics = server.get_document_diagnostics(uri)
+    
+    # Filter diagnostics to those in the requested range
+    range = params.range
+    
+    return server.quickfixes_provider.get_code_actions(
+        content, uri, diagnostics, range
+    )
+
+
 def _publish_diagnostics(uri: str, content: str):
     """Publish diagnostics for a document."""
     diagnostics = server.diagnostics_provider.get_diagnostics(content, uri)
+    server.set_document_diagnostics(uri, diagnostics)
     server.publish_diagnostics(uri, diagnostics)
 
 
