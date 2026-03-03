@@ -14,12 +14,14 @@ from lsprotocol.types import (
     TEXT_DOCUMENT_DID_OPEN,
     TEXT_DOCUMENT_DID_CHANGE,
     TEXT_DOCUMENT_DID_SAVE,
+    TEXT_DOCUMENT_FORMATTING,
     CompletionOptions,
     CompletionParams,
     HoverParams,
     DidOpenTextDocumentParams,
     DidChangeTextDocumentParams,
     DidSaveTextDocumentParams,
+    DocumentFormattingParams,
     InitializeParams,
     InitializeResult,
     ServerCapabilities,
@@ -31,6 +33,7 @@ from pygls.server import LanguageServer
 from .features.completion import CompletionProvider
 from .features.hover import HoverProvider
 from .features.diagnostics import DiagnosticsProvider
+from .features.formatting import FormattingProvider
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -45,6 +48,7 @@ class VASPLanguageServer(LanguageServer):
         self.completion_provider = CompletionProvider()
         self.hover_provider = HoverProvider()
         self.diagnostics_provider = DiagnosticsProvider()
+        self.formatting_provider = FormattingProvider()
         
         # Document cache
         self.documents: dict = {}
@@ -78,6 +82,7 @@ def initialize(params: InitializeParams) -> InitializeResult:
             trigger_characters=["=", " ", "."],
         ),
         hover_provider=True,
+        document_formatting_provider=True,
     )
     
     return InitializeResult(capabilities=capabilities)
@@ -138,6 +143,23 @@ def hover(params: HoverParams):
         return None
         
     return server.hover_provider.get_hover(params, content, uri)
+
+
+@server.feature(TEXT_DOCUMENT_FORMATTING)
+def formatting(params: DocumentFormattingParams):
+    """Handle document formatting request."""
+    uri = params.text_document.uri
+    content = server.get_document_content(uri)
+    
+    if content is None:
+        return None
+    
+    options = {
+        "tabSize": params.options.tab_size,
+        "insertSpaces": params.options.insert_spaces,
+    }
+    
+    return server.formatting_provider.format_document(content, uri, options)
 
 
 def _publish_diagnostics(uri: str, content: str):

@@ -3,5 +3,6 @@
 from .completion import CompletionProvider
 from .hover import HoverProvider
 from .diagnostics import DiagnosticsProvider
+from .formatting import FormattingProvider
 
-__all__ = ["CompletionProvider", "HoverProvider", "DiagnosticsProvider"]
+__all__ = ["CompletionProvider", "HoverProvider", "DiagnosticsProvider", "FormattingProvider"]
