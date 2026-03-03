@@ -1,7 +1,6 @@
 """Tests for formatting coverage edge cases to reach 100%."""
 
 import pytest
-from lsprotocol.types import TextEdit
 
 from vasp_lsp.features.formatting import FormattingProvider
 
@@ -14,7 +13,7 @@ def formatter():
 
 class TestINCAREdgeCases:
     """Test INCAR edge cases for 100% coverage."""
-    
+
     def test_format_incar_no_params(self, formatter):
         """Test formatting INCAR with only comments/no valid params (line 123)."""
         content = """# Just a comment
@@ -27,7 +26,7 @@ class TestINCAREdgeCases:
 
 class TestPOSCAREdgeCases:
     """Test POSCAR edge cases for 100% coverage."""
-    
+
     def test_format_poscar_invalid_scaling_factor(self, formatter):
         """Test POSCAR with invalid scaling factor (lines 193-194)."""
         content = """Si
@@ -44,7 +43,7 @@ Direct
         assert len(result) == 1
         # When scaling factor is invalid, code keeps original line
         assert "invalid_scale" in result[0].new_text
-    
+
     def test_format_poscar_short_content_fewer_than_5_lines(self, formatter):
         """Test POSCAR with fewer than 5 lines returns empty list."""
         content = """Si
@@ -54,7 +53,7 @@ Direct
         result = formatter._format_poscar(content)
         # Less than 5 lines returns empty list
         assert result == []
-    
+
     def test_format_poscar_short_lattice(self, formatter):
         """Test POSCAR with short lattice vectors (lines 206-207)."""
         content = """Si
@@ -71,7 +70,7 @@ Direct
         text = result[0].new_text
         # Should fill missing lattice with zeros
         assert "0.0000000000" in text
-    
+
     def test_format_poscar_invalid_lattice_values(self, formatter):
         """Test POSCAR with invalid lattice values (lines 206-207)."""
         content = """Si
@@ -86,7 +85,7 @@ Direct
 """
         result = formatter._format_poscar(content)
         assert len(result) == 1
-    
+
     def test_format_poscar_malformed_lattice(self, formatter):
         """Test POSCAR with malformed lattice line (less than 3 parts)."""
         content = """Si
@@ -105,7 +104,7 @@ Direct
 
 class TestKPOINTSEdgeCases:
     """Test KPOINTS edge cases for 100% coverage."""
-    
+
     def test_format_kpoints_invalid_grid_line(self, formatter):
         """Test KPOINTS with invalid grid line (lines 260-261)."""
         content = """Automatic mesh
@@ -117,7 +116,7 @@ invalid grid
         assert len(result) == 1
         # Should preserve original line on ValueError
         assert "invalid grid" in result[0].new_text
-    
+
     def test_format_kpoints_invalid_six_numbers(self, formatter):
         """Test KPOINTS with 6 invalid numbers (lines 260-261)."""
         content = """Automatic mesh
@@ -129,7 +128,7 @@ a b c d e f
         assert len(result) == 1
         text = result[0].new_text
         assert "a b c d e f" in text
-    
+
     def test_format_kpoints_explicit_invalid_coords(self, formatter):
         """Test KPOINTS explicit mode with invalid coordinates (lines 321-322)."""
         content = """Explicit k-points
@@ -141,7 +140,7 @@ invalid line here
         assert len(result) == 1
         text = result[0].new_text
         assert "invalid line here" in text
-    
+
     def test_format_kpoints_mixed_invalid_coords(self, formatter):
         """Test KPOINTS with some valid and some invalid coords (lines 321-322)."""
         content = """Explicit k-points
@@ -157,12 +156,12 @@ invalid
 
 class TestFormatValueEdgeCases:
     """Test _format_value method edge cases."""
-    
+
     def test_format_value_tuple(self, formatter):
         """Test formatting tuple values."""
         result = formatter._format_value((1, 2, 3))
         assert result == "1 2 3"
-    
+
     def test_format_value_nested_list(self, formatter):
         """Test formatting nested list."""
         result = formatter._format_value([1, [2, 3]])
@@ -172,7 +171,7 @@ class TestFormatValueEdgeCases:
 
 class TestDocumentFormatEdgeCases:
     """Test format_document edge cases."""
-    
+
     def test_format_document_unknown_type(self, formatter):
         """Test format_document with unknown file type."""
         result = formatter.format_document("some content", "file:///unknown.txt")
@@ -181,13 +180,13 @@ class TestDocumentFormatEdgeCases:
 
 class TestINCARParserEmptyCases:
     """Test cases where INCAR parser returns empty params."""
-    
+
     def test_format_incar_only_newlines(self, formatter):
         """Test formatting INCAR with only newlines."""
         content = "\n\n\n"
         result = formatter._format_incar(content)
         assert result == []
-    
+
     def test_format_incar_only_whitespace(self, formatter):
         """Test formatting INCAR with only whitespace."""
         content = "   \n   \n   \n"

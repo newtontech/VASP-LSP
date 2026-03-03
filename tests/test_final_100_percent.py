@@ -1,6 +1,5 @@
 """Tests for final 100% coverage - March 2026."""
 
-import pytest
 from vasp_lsp.features.formatting import FormattingProvider
 from vasp_lsp.features.quickfixes import QuickFixesProvider
 
@@ -47,7 +46,7 @@ Direct
     1.0    0.0    0.0
     0.0    1.0    0.0
     0.0    0.0    1.0
-   
+
 Si
     1
 Direct
@@ -63,12 +62,14 @@ class TestPoscarQuickFixes:
         """Test quick fix for empty POSCAR cell vectors."""
         provider = QuickFixesProvider()
         # Create a diagnostic for missing cell
-        from lsprotocol.types import Diagnostic, Range, Position
+        from lsprotocol.types import Diagnostic, Position, Range
+
         diagnostic = Diagnostic(
-            range=Range(start=Position(line=0, character=0),
-                       end=Position(line=0, character=10)),
+            range=Range(
+                start=Position(line=0, character=0), end=Position(line=0, character=10)
+            ),
             message="Missing cell vectors",
-            severity=1
+            severity=1,
         )
         content = """POSCAR
 1.0
@@ -85,12 +86,14 @@ class TestPoscarQuickFixes:
     def test_poscar_quick_fixes_missing_coords(self):
         """Test quick fix for missing coordinate section."""
         provider = QuickFixesProvider()
-        from lsprotocol.types import Diagnostic, Range, Position
+        from lsprotocol.types import Diagnostic, Position, Range
+
         diagnostic = Diagnostic(
-            range=Range(start=Position(line=5, character=0),
-                       end=Position(line=5, character=10)),
+            range=Range(
+                start=Position(line=5, character=0), end=Position(line=5, character=10)
+            ),
             message="Missing coordinates",
-            severity=1
+            severity=1,
         )
         content = """POSCAR
 1.0
@@ -108,9 +111,11 @@ Si
     def test_poscar_quick_fixes_no_diagnostics(self):
         """Test quick fix with no diagnostics."""
         provider = QuickFixesProvider()
-        from lsprotocol.types import Range, Position
-        range_obj = Range(start=Position(line=0, character=0),
-                         end=Position(line=0, character=10))
+        from lsprotocol.types import Position, Range
+
+        range_obj = Range(
+            start=Position(line=0, character=0), end=Position(line=0, character=10)
+        )
         content = """POSCAR
 1.0
 1.0 0.0 0.0
@@ -127,20 +132,25 @@ Direct
     def test_poscar_quick_fixes_multiple_issues(self):
         """Test quick fixes for multiple POSCAR issues."""
         provider = QuickFixesProvider()
-        from lsprotocol.types import Diagnostic, Range, Position
+        from lsprotocol.types import Diagnostic, Position, Range
+
         diagnostics = [
             Diagnostic(
-                range=Range(start=Position(line=2, character=0),
-                           end=Position(line=2, character=10)),
+                range=Range(
+                    start=Position(line=2, character=0),
+                    end=Position(line=2, character=10),
+                ),
                 message="Invalid lattice vector",
-                severity=1
+                severity=1,
             ),
             Diagnostic(
-                range=Range(start=Position(line=7, character=0),
-                           end=Position(line=7, character=10)),
+                range=Range(
+                    start=Position(line=7, character=0),
+                    end=Position(line=7, character=10),
+                ),
                 message="Coordinate out of bounds",
-                severity=2
-            )
+                severity=2,
+            ),
         ]
         content = """POSCAR
 1.0

@@ -8,6 +8,7 @@ from typing import Any, Dict, List, Optional
 @dataclass
 class INCARParameter:
     """Represents a parsed INCAR parameter."""
+
     name: str
     value: Any
     line_number: int
@@ -23,12 +24,11 @@ class INCARParser:
     # Matches: TAG = value  or  TAG= value  or  TAG =value  or  TAG=value
     # Also handles comments starting with # or !
     PARAM_REGEX = re.compile(
-        r'^\s*(?P<name>[A-Za-z_][A-Za-z0-9_]*)\s*=\s*(?P<value>[^#!]*)',
-        re.IGNORECASE
+        r"^\s*(?P<name>[A-Za-z_][A-Za-z0-9_]*)\s*=\s*(?P<value>[^#!]*)", re.IGNORECASE
     )
 
     # Comment patterns
-    COMMENT_REGEX = re.compile(r'[#!].*$')
+    COMMENT_REGEX = re.compile(r"[#!].*$")
 
     def __init__(self, content: str):
         """Initialize parser with INCAR file content.
@@ -37,7 +37,7 @@ class INCARParser:
             content: The full content of the INCAR file.
         """
         self.content = content
-        self.lines = content.split('\n')
+        self.lines = content.split("\n")
         self.parameters: Dict[str, INCARParameter] = {}
         self.errors: List[Dict[str, Any]] = []
 
@@ -55,20 +55,24 @@ class INCARParser:
                 param = self._parse_line(line, line_num)
                 if param:
                     if param.name.upper() in self.parameters:
-                        self.errors.append({
-                            'message': f"Duplicate parameter: {param.name}",
-                            'line': line_num,
-                            'column': param.column_start,
-                            'severity': 'warning'
-                        })
+                        self.errors.append(
+                            {
+                                "message": f"Duplicate parameter: {param.name}",
+                                "line": line_num,
+                                "column": param.column_start,
+                                "severity": "warning",
+                            }
+                        )
                     self.parameters[param.name.upper()] = param
             except Exception as e:
-                self.errors.append({
-                    'message': f"Parse error: {str(e)}",
-                    'line': line_num,
-                    'column': 0,
-                    'severity': 'error'
-                })
+                self.errors.append(
+                    {
+                        "message": f"Parse error: {str(e)}",
+                        "line": line_num,
+                        "column": 0,
+                        "severity": "error",
+                    }
+                )
 
         return self.parameters
 
@@ -84,27 +88,29 @@ class INCARParser:
         """
         # Skip empty lines and comment-only lines
         stripped = line.strip()
-        if not stripped or stripped.startswith('#') or stripped.startswith('!'):
+        if not stripped or stripped.startswith("#") or stripped.startswith("!"):
             return None
 
         # Try to match parameter pattern
         match = self.PARAM_REGEX.match(line)
         if not match:
             # Check if it looks like a parameter (contains letters)
-            if re.search(r'[A-Za-z]', stripped):
-                self.errors.append({
-                    'message': f"Invalid parameter format: {stripped}",
-                    'line': line_num,
-                    'column': 0,
-                    'severity': 'error'
-                })
+            if re.search(r"[A-Za-z]", stripped):
+                self.errors.append(
+                    {
+                        "message": f"Invalid parameter format: {stripped}",
+                        "line": line_num,
+                        "column": 0,
+                        "severity": "error",
+                    }
+                )
             return None
 
-        name = match.group('name').upper()
-        value_str = match.group('value').strip()
+        name = match.group("name").upper()
+        value_str = match.group("value").strip()
 
         # Remove trailing comments
-        value_str = self.COMMENT_REGEX.sub('', value_str).strip()
+        value_str = self.COMMENT_REGEX.sub("", value_str).strip()
 
         # Parse value
         value = self._parse_value(value_str)
@@ -113,9 +119,9 @@ class INCARParser:
             name=name,
             value=value,
             line_number=line_num,
-            column_start=match.start('name'),
-            column_end=match.end('value'),
-            raw_line=line
+            column_start=match.start("name"),
+            column_end=match.end("value"),
+            raw_line=line,
         )
 
     def _parse_value(self, value_str: str) -> Any:
@@ -130,9 +136,9 @@ class INCARParser:
         value_upper = value_str.upper()
 
         # Handle boolean values
-        if value_upper in ['.TRUE.', 'T', 'TRUE']:
+        if value_upper in [".TRUE.", "T", "TRUE"]:
             return True
-        if value_upper in ['.FALSE.', 'F', 'FALSE']:
+        if value_upper in [".FALSE.", "F", "FALSE"]:
             return False
 
         # Try integer
@@ -148,7 +154,7 @@ class INCARParser:
             pass
 
         # Handle array values (space-separated)
-        if ' ' in value_str:
+        if " " in value_str:
             parts = value_str.split()
             parsed_parts = []
             for part in parts:

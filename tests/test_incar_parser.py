@@ -3,7 +3,8 @@ Tests for INCAR parser.
 """
 
 import pytest
-from vasp_lsp.parsers.incar_parser import INCARParser, INCARParameter
+
+from vasp_lsp.parsers.incar_parser import INCARParser
 
 
 class TestINCARParser:
@@ -21,7 +22,7 @@ class TestINCARParser:
         content = "ENCUT = 520"
         parser = INCARParser(content)
         params = parser.parse()
-        
+
         assert len(params) == 1
         assert "ENCUT" in params
         assert params["ENCUT"].value == 520
@@ -36,7 +37,7 @@ class TestINCARParser:
         """
         parser = INCARParser(content)
         params = parser.parse()
-        
+
         assert len(params) == 3
         assert params["ENCUT"].value == 520
         assert params["ISMEAR"].value == 0
@@ -95,7 +96,7 @@ class TestINCARParser:
         """
         parser = INCARParser(content)
         params = parser.parse()
-        
+
         assert len(params) == 2
         assert "ENCUT" in params
         assert "ISMEAR" in params
@@ -109,7 +110,7 @@ class TestINCARParser:
         """
         parser = INCARParser(content)
         params = parser.parse()
-        
+
         assert len(params) == 2
         assert "ENCUT" in params
         assert "ISMEAR" in params
@@ -122,10 +123,10 @@ class TestINCARParser:
         """
         parser = INCARParser(content)
         params = parser.parse()
-        
+
         # Should have the second value
         assert params["ENCUT"].value == 520
-        
+
         # Should have a warning
         errors = parser.get_errors()
         assert len(errors) == 1
@@ -137,7 +138,7 @@ class TestINCARParser:
         content = "This is not a valid parameter"
         parser = INCARParser(content)
         parser.parse()
-        
+
         errors = parser.get_errors()
         assert len(errors) == 1
         assert errors[0]["severity"] == "error"
@@ -147,15 +148,15 @@ class TestINCARParser:
         content = "ENCUT = 520"
         parser = INCARParser(content)
         parser.parse()
-        
+
         param = parser.get_parameter("ENCUT")
         assert param is not None
         assert param.value == 520
-        
+
         # Test case insensitivity
         param = parser.get_parameter("encut")
         assert param is not None
-        
+
         # Test non-existent parameter
         param = parser.get_parameter("NONEXISTENT")
         assert param is None
@@ -165,7 +166,7 @@ class TestINCARParser:
         content = "ENCUT = 520"
         parser = INCARParser(content)
         parser.parse()
-        
+
         assert parser.has_parameter("ENCUT") is True
         assert parser.has_parameter("encut") is True  # Case insensitive
         assert parser.has_parameter("NONEXISTENT") is False
@@ -175,7 +176,7 @@ class TestINCARParser:
         content = "ENCUT = 520\nISMEAR = 0"
         parser = INCARParser(content)
         parser.parse()
-        
+
         all_params = parser.get_all_parameters()
         assert len(all_params) == 2
         assert "ENCUT" in all_params
@@ -186,7 +187,7 @@ class TestINCARParser:
         content = "ENCUT=520\nISMEAR  =  0\nSIGMA= 0.05"
         parser = INCARParser(content)
         params = parser.parse()
-        
+
         assert len(params) == 3
         assert params["ENCUT"].value == 520
         assert params["ISMEAR"].value == 0
@@ -212,6 +213,6 @@ class TestINCARParser:
         """
         parser = INCARParser(content)
         params = parser.parse()
-        
+
         assert len(params) == 11  # SYSTEM + 10 other params
         assert parser.get_errors() == []

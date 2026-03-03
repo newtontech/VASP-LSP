@@ -84,7 +84,9 @@ server = VASPLanguageServer()
 def initialize(params: InitializeParams) -> InitializeResult:
     """Handle server initialization."""
     logger.info("Initializing VASP-LSP v0.1.0")
-    logger.info(f"Client: {params.client_info.name if params.client_info else 'Unknown'}")
+    logger.info(
+        f"Client: {params.client_info.name if params.client_info else 'Unknown'}"
+    )
 
     capabilities = ServerCapabilities(
         text_document_sync=TextDocumentSyncOptions(
@@ -148,9 +150,7 @@ def completions(params: CompletionParams):
     if content is None:
         return None
 
-    return server.completion_provider.get_completions(
-        params, content, uri
-    )
+    return server.completion_provider.get_completions(params, content, uri)
 
 
 @server.feature(TEXT_DOCUMENT_HOVER)
@@ -197,9 +197,7 @@ def code_action(params: CodeActionParams):
     # Filter diagnostics to those in the requested range
     range = params.range
 
-    return server.quickfixes_provider.get_code_actions(
-        content, uri, diagnostics, range
-    )
+    return server.quickfixes_provider.get_code_actions(content, uri, diagnostics, range)
 
 
 def _publish_diagnostics(uri: str, content: str):

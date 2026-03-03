@@ -6,4 +6,10 @@ from .formatting import FormattingProvider
 from .hover import HoverProvider
 from .quickfixes import QuickFixesProvider
 
-__all__ = ["CompletionProvider", "HoverProvider", "DiagnosticsProvider", "FormattingProvider", "QuickFixesProvider"]
+__all__ = [
+    "CompletionProvider",
+    "HoverProvider",
+    "DiagnosticsProvider",
+    "FormattingProvider",
+    "QuickFixesProvider",
+]

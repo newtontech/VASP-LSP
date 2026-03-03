@@ -2,11 +2,11 @@
 Targeted tests for remaining missing coverage lines.
 """
 
-import pytest
-from vasp_lsp.parsers.kpoints_parser import KPOINTSParser, KPOINTSMode
-from vasp_lsp.parsers.poscar_parser import POSCARParser
+from lsprotocol.types import Position
+
 from vasp_lsp.features.hover import HoverProvider
-from lsprotocol.types import Position, HoverParams, TextDocumentIdentifier
+from vasp_lsp.parsers.kpoints_parser import KPOINTSParser
+from vasp_lsp.parsers.poscar_parser import POSCARParser
 
 
 class TestKPOINTSParserMissing:
@@ -21,12 +21,12 @@ not_a_number
 """
         parser = KPOINTSParser(content)
         data = parser.parse()
-        
+
         assert data is None
         errors = parser.get_errors()
         assert len(errors) > 0
         # Line 77-83 is the error handler
-        assert "Invalid k-point specification" in errors[0]['message']
+        assert "Invalid k-point specification" in errors[0]["message"]
 
     def test_line_122_128_automatic_error(self):
         """Test lines 122-128 - ValueError/IndexError in automatic mode."""
@@ -39,12 +39,15 @@ a b c
 """
         parser = KPOINTSParser(content)
         data = parser.parse()
-        
+
         assert data is None
         errors = parser.get_errors()
         assert len(errors) > 0
         # Should have error about parsing automatic mode
-        assert "Error parsing automatic mode" in errors[0]['message'] or "requires 3 grid values" in errors[0]['message']
+        assert (
+            "Error parsing automatic mode" in errors[0]["message"]
+            or "requires 3 grid values" in errors[0]["message"]
+        )
 
     def test_automatic_mode_invalid_grid_values(self):
         """Test automatic mode with non-numeric grid - triggers exception handler."""
@@ -54,7 +57,7 @@ x y z
 """
         parser = KPOINTSParser(content)
         data = parser.parse()
-        
+
         assert data is None
         errors = parser.get_errors()
         assert len(errors) > 0
@@ -69,7 +72,7 @@ x y z
 """
         parser = KPOINTSParser(content)
         data = parser.parse()
-        
+
         assert data is None
         errors = parser.get_errors()
         assert len(errors) > 0
@@ -83,7 +86,7 @@ a b c
 """
         parser = KPOINTSParser(content)
         data = parser.parse()
-        
+
         assert data is None
         errors = parser.get_errors()
         assert len(errors) > 0
@@ -100,7 +103,7 @@ Reciprocal
 """
         parser = KPOINTSParser(content)
         data = parser.parse()
-        
+
         # Should handle the error
         assert data is None or len(parser.get_errors()) >= 0
 
@@ -111,7 +114,7 @@ Reciprocal
 Line"""
         parser = KPOINTSParser(content)
         data = parser.parse()
-        
+
         # Should handle index error gracefully
         assert data is None or len(parser.get_errors()) >= 0
 
@@ -125,7 +128,7 @@ abc def ghi
 """
         parser = KPOINTSParser(content)
         data = parser.parse()
-        
+
         # Should handle value error gracefully
         assert data is None or len(parser.get_errors()) >= 0
 
@@ -146,12 +149,12 @@ Direct
 0.0 0.0 0.0
 """
         parser = POSCARParser(content)
-        
+
         # The exception handler is at lines 181-187
         # We need to trigger a general exception
         # This is tricky without mocking internals
         data = parser.parse()
-        
+
         # Normal parse should work
         assert data is not None
 
@@ -166,7 +169,7 @@ class TestHoverMissing:
         content = "Comment\n0\nGamma\n4 4 4"
         position = Position(line=10, character=0)  # Line 10 not in docs
         result = provider._get_kpoints_hover(content, position)
-        
+
         # Should return None for lines not in docs
         assert result is None
 
@@ -176,6 +179,6 @@ class TestHoverMissing:
         content = "Comment\n1.0\n1.0 0.0 0.0\n0.0 1.0 0.0\n0.0 0.0 1.0\nH\n1\nDirect\n0.0 0.0 0.0"
         position = Position(line=100, character=0)  # Line 100 not in docs
         result = provider._get_poscar_hover(content, position)
-        
+
         # Should return None for lines not in docs
         assert result is None

@@ -7,6 +7,7 @@ from typing import Any, Dict, List, Optional
 @dataclass
 class POSCARData:
     """Represents parsed POSCAR data."""
+
     system_comment: str
     scale_factor: float
     lattice_vectors: List[List[float]]  # 3x3 matrix
@@ -27,7 +28,7 @@ class POSCARParser:
             content: The full content of the POSCAR file.
         """
         self.content = content
-        self.lines = content.split('\n')
+        self.lines = content.split("\n")
         self.data: Optional[POSCARData] = None
         self.errors: List[Dict[str, Any]] = []
 
@@ -50,11 +51,13 @@ class POSCARParser:
             try:
                 scale_factor = float(self.lines[line_idx].strip())
             except (ValueError, IndexError) as e:
-                self.errors.append({
-                    'message': f"Invalid scale factor: {e}",
-                    'line': line_idx + 1,
-                    'severity': 'error'
-                })
+                self.errors.append(
+                    {
+                        "message": f"Invalid scale factor: {e}",
+                        "line": line_idx + 1,
+                        "severity": "error",
+                    }
+                )
                 return None
             line_idx += 1
 
@@ -68,11 +71,13 @@ class POSCARParser:
                     vector = [float(parts[0]), float(parts[1]), float(parts[2])]
                     lattice_vectors.append(vector)
                 except (ValueError, IndexError) as e:
-                    self.errors.append({
-                        'message': f"Invalid lattice vector {i+1}: {e}",
-                        'line': line_idx + 1,
-                        'severity': 'error'
-                    })
+                    self.errors.append(
+                        {
+                            "message": f"Invalid lattice vector {i + 1}: {e}",
+                            "line": line_idx + 1,
+                            "severity": "error",
+                        }
+                    )
                     return None
                 line_idx += 1
 
@@ -89,43 +94,49 @@ class POSCARParser:
             try:
                 atom_counts = [int(x) for x in self.lines[line_idx].strip().split()]
                 if atom_types and len(atom_types) != len(atom_counts):
-                    self.errors.append({
-                        'message': f"Mismatch between atom types ({len(atom_types)}) and counts ({len(atom_counts)})",
-                        'line': line_idx + 1,
-                        'severity': 'error'
-                    })
+                    self.errors.append(
+                        {
+                            "message": f"Mismatch between atom types ({len(atom_types)}) and counts ({len(atom_counts)})",
+                            "line": line_idx + 1,
+                            "severity": "error",
+                        }
+                    )
             except (ValueError, IndexError) as e:
-                self.errors.append({
-                    'message': f"Invalid atom counts: {e}",
-                    'line': line_idx + 1,
-                    'severity': 'error'
-                })
+                self.errors.append(
+                    {
+                        "message": f"Invalid atom counts: {e}",
+                        "line": line_idx + 1,
+                        "severity": "error",
+                    }
+                )
                 return None
             line_idx += 1
 
             # If no atom types were specified, create generic ones
             if not atom_types:
-                atom_types = [f"Type{i+1}" for i in range(len(atom_counts))]
+                atom_types = [f"Type{i + 1}" for i in range(len(atom_counts))]
 
             # Check for selective dynamics line
             selective_dynamics = None
             coord_type_line = self.lines[line_idx].strip().lower()
-            if coord_type_line.startswith('s'):
+            if coord_type_line.startswith("s"):
                 selective_dynamics = []
                 line_idx += 1
                 coord_type_line = self.lines[line_idx].strip().lower()
 
             # Coordinate type
-            if coord_type_line.startswith('d'):
+            if coord_type_line.startswith("d"):
                 coordinate_type = "Direct"
-            elif coord_type_line.startswith('c') or coord_type_line.startswith('k'):
+            elif coord_type_line.startswith("c") or coord_type_line.startswith("k"):
                 coordinate_type = "Cartesian"
             else:
-                self.errors.append({
-                    'message': f"Unknown coordinate type: {coord_type_line}",
-                    'line': line_idx + 1,
-                    'severity': 'error'
-                })
+                self.errors.append(
+                    {
+                        "message": f"Unknown coordinate type: {coord_type_line}",
+                        "line": line_idx + 1,
+                        "severity": "error",
+                    }
+                )
                 return None
             line_idx += 1
 
@@ -139,7 +150,9 @@ class POSCARParser:
                 try:
                     parts = self.lines[line_idx].strip().split()
                     if len(parts) < 3:
-                        raise ValueError(f"Expected at least 3 values, got {len(parts)}")
+                        raise ValueError(
+                            f"Expected at least 3 values, got {len(parts)}"
+                        )
                     coord = [float(parts[0]), float(parts[1]), float(parts[2])]
                     coordinates.append(coord)
 
@@ -147,20 +160,22 @@ class POSCARParser:
                     if selective_dynamics is not None:
                         if len(parts) >= 6:
                             flags = [
-                                parts[3].upper() == 'T',
-                                parts[4].upper() == 'T',
-                                parts[5].upper() == 'T'
+                                parts[3].upper() == "T",
+                                parts[4].upper() == "T",
+                                parts[5].upper() == "T",
                             ]
                         else:
                             flags = [True, True, True]  # Default to movable
                         selective_dynamics.append(flags)
 
                 except (ValueError, IndexError) as e:
-                    self.errors.append({
-                        'message': f"Invalid coordinate for atom {i+1}: {e}",
-                        'line': line_idx + 1,
-                        'severity': 'error'
-                    })
+                    self.errors.append(
+                        {
+                            "message": f"Invalid coordinate for atom {i + 1}: {e}",
+                            "line": line_idx + 1,
+                            "severity": "error",
+                        }
+                    )
                     return None
                 line_idx += 1
 
@@ -172,17 +187,19 @@ class POSCARParser:
                 atom_counts=atom_counts,
                 coordinate_type=coordinate_type,
                 coordinates=coordinates,
-                selective_dynamics=selective_dynamics
+                selective_dynamics=selective_dynamics,
             )
 
             return self.data
 
         except Exception as e:
-            self.errors.append({
-                'message': f"Unexpected parse error: {str(e)}",
-                'line': 0,
-                'severity': 'error'
-            })
+            self.errors.append(
+                {
+                    "message": f"Unexpected parse error: {str(e)}",
+                    "line": 0,
+                    "severity": "error",
+                }
+            )
             return None
 
     def get_errors(self) -> List[Dict[str, Any]]:

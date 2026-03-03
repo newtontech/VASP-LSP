@@ -18,10 +18,7 @@ class FormattingProvider:
         pass
 
     def format_document(
-        self,
-        document_content: str,
-        document_uri: str,
-        options: Optional[dict] = None
+        self, document_content: str, document_uri: str, options: Optional[dict] = None
     ) -> List[TextEdit]:
         """Format the entire document.
 
@@ -35,27 +32,27 @@ class FormattingProvider:
         """
         file_type = self._get_file_type(document_uri)
 
-        if file_type == 'INCAR':
+        if file_type == "INCAR":
             return self._format_incar(document_content)
-        elif file_type == 'POSCAR':
+        elif file_type == "POSCAR":
             return self._format_poscar(document_content)
-        elif file_type == 'KPOINTS':
+        elif file_type == "KPOINTS":
             return self._format_kpoints(document_content)
 
         return []
 
     def _get_file_type(self, uri: str) -> str:
         """Determine file type from URI."""
-        filename = uri.split('/')[-1].upper()
+        filename = uri.split("/")[-1].upper()
 
-        if 'INCAR' in filename:
-            return 'INCAR'
-        if 'POSCAR' in filename or 'CONTCAR' in filename:
-            return 'POSCAR'
-        if 'KPOINTS' in filename:
-            return 'KPOINTS'
+        if "INCAR" in filename:
+            return "INCAR"
+        if "POSCAR" in filename or "CONTCAR" in filename:
+            return "POSCAR"
+        if "KPOINTS" in filename:
+            return "KPOINTS"
 
-        return 'UNKNOWN'
+        return "UNKNOWN"
 
     def _format_incar(self, content: str) -> List[TextEdit]:
         """Format INCAR file content.
@@ -83,28 +80,74 @@ class FormattingProvider:
         other = []
 
         electronic_tags = {
-            'PREC', 'ISPIN', 'MAGMOM', 'NELM', 'NELMIN', 'NELMDL', 'EDIFF',
-            'LREAL', 'ENCUT', 'ENAUG', 'ISMEAR', 'SIGMA', 'LWAVE', 'LCHARG',
-            'LVTOT', 'LVHAR', 'LELF', 'LORBIT', 'NEDOS', 'EMIN', 'EMAX',
-            'ISYM', 'SYMPREC', 'NBANDS', 'NWRITE', 'LASPH', 'METAGGA',
-            'LHFCALC', 'HFSCREEN', 'PRECFOCK', 'LDAU', 'LDAUTYPE', 'LDAUL',
-            'LDAUU', 'LDAUJ'
+            "PREC",
+            "ISPIN",
+            "MAGMOM",
+            "NELM",
+            "NELMIN",
+            "NELMDL",
+            "EDIFF",
+            "LREAL",
+            "ENCUT",
+            "ENAUG",
+            "ISMEAR",
+            "SIGMA",
+            "LWAVE",
+            "LCHARG",
+            "LVTOT",
+            "LVHAR",
+            "LELF",
+            "LORBIT",
+            "NEDOS",
+            "EMIN",
+            "EMAX",
+            "ISYM",
+            "SYMPREC",
+            "NBANDS",
+            "NWRITE",
+            "LASPH",
+            "METAGGA",
+            "LHFCALC",
+            "HFSCREEN",
+            "PRECFOCK",
+            "LDAU",
+            "LDAUTYPE",
+            "LDAUL",
+            "LDAUU",
+            "LDAUJ",
         }
 
         ionic_tags = {
-            'IBRION', 'NSW', 'ISIF', 'PSTRESS', 'EDIFFG', 'POTIM', 'SMASS',
-            'TEBEG', 'TEEND', 'NFREE', 'POMASS', 'ZVAL'
+            "IBRION",
+            "NSW",
+            "ISIF",
+            "PSTRESS",
+            "EDIFFG",
+            "POTIM",
+            "SMASS",
+            "TEBEG",
+            "TEEND",
+            "NFREE",
+            "POMASS",
+            "ZVAL",
         }
 
         mixing_tags = {
-            'ALGO', 'IALGO', 'LDIAG', 'BMIX', 'AMIX', 'BMIX_MAG', 'AMIX_MAG',
-            'AMIN', 'WC', 'INIMIX', 'MAXMIX', 'MIXPRE'
+            "ALGO",
+            "IALGO",
+            "LDIAG",
+            "BMIX",
+            "AMIX",
+            "BMIX_MAG",
+            "AMIX_MAG",
+            "AMIN",
+            "WC",
+            "INIMIX",
+            "MAXMIX",
+            "MIXPRE",
         }
 
-        parallel_tags = {
-            'NCORE', 'NPAR', 'KPAR', 'LPLANE', 'LSCALU', 'NSIM'
-        }
-
+        parallel_tags = {"NCORE", "NPAR", "KPAR", "LPLANE", "LSCALU", "NSIM"}
 
         for name, param in params.items():
             if name in electronic_tags:
@@ -140,8 +183,8 @@ class FormattingProvider:
         if formatted_lines and formatted_lines[-1] == "":
             formatted_lines.pop()
 
-        formatted_content = '\n'.join(formatted_lines)
-        lines = content.split('\n')
+        formatted_content = "\n".join(formatted_lines)
+        lines = content.split("\n")
         end_line = len(lines) - 1
         end_char = len(lines[end_line]) if lines else 0
 
@@ -149,9 +192,9 @@ class FormattingProvider:
             TextEdit(
                 range=Range(
                     start=Position(line=0, character=0),
-                    end=Position(line=end_line, character=end_char)
+                    end=Position(line=end_line, character=end_char),
                 ),
-                new_text=formatted_content
+                new_text=formatted_content,
             )
         ]
 
@@ -170,7 +213,7 @@ class FormattingProvider:
         - Ensure consistent column alignment
         - Proper spacing between sections
         """
-        lines = content.split('\n')
+        lines = content.split("\n")
         if len(lines) < 5:
             return []
 
@@ -212,9 +255,9 @@ class FormattingProvider:
         # Line 8: Coordinate type (Direct or Cartesian)
         if len(lines) > 7:
             coord_type = lines[7].strip().upper()
-            if coord_type.startswith('D'):
+            if coord_type.startswith("D"):
                 formatted_lines.append("Direct")
-            elif coord_type.startswith('C') or coord_type.startswith('K'):
+            elif coord_type.startswith("C") or coord_type.startswith("K"):
                 formatted_lines.append("Cartesian")
             else:
                 formatted_lines.append(coord_type)
@@ -223,14 +266,14 @@ class FormattingProvider:
         for i in range(8, len(lines)):
             line = lines[i]
             stripped = line.strip()
-            if not stripped or stripped.startswith('#'):
+            if not stripped or stripped.startswith("#"):
                 formatted_lines.append(stripped)
                 continue
 
             # Extract comment if present
             comment = ""
-            if '#' in line:
-                parts = line.split('#', 1)
+            if "#" in line:
+                parts = line.split("#", 1)
                 line = parts[0]
                 comment = "  #" + parts[1]
 
@@ -240,7 +283,7 @@ class FormattingProvider:
                     coords = [float(p) for p in parts[:3]]
                     # Handle selective dynamics flags if present
                     if len(parts) >= 6:
-                        flags = ' '.join(parts[3:6])
+                        flags = " ".join(parts[3:6])
                         formatted_lines.append(
                             f"   {coords[0]:.10f}   {coords[1]:.10f}   {coords[2]:.10f}   {flags}{comment}"
                         )
@@ -253,7 +296,7 @@ class FormattingProvider:
             else:
                 formatted_lines.append(stripped)
 
-        formatted_content = '\n'.join(formatted_lines)
+        formatted_content = "\n".join(formatted_lines)
         end_line = len(lines) - 1
         end_char = len(lines[end_line]) if lines else 0
 
@@ -261,9 +304,9 @@ class FormattingProvider:
             TextEdit(
                 range=Range(
                     start=Position(line=0, character=0),
-                    end=Position(line=end_line, character=end_char)
+                    end=Position(line=end_line, character=end_char),
                 ),
-                new_text=formatted_content
+                new_text=formatted_content,
             )
         ]
 
@@ -274,7 +317,7 @@ class FormattingProvider:
         - Ensure proper section separation
         - Consistent k-point grid formatting
         """
-        lines = content.split('\n')
+        lines = content.split("\n")
         if len(lines) < 4:
             return []
 
@@ -290,9 +333,9 @@ class FormattingProvider:
         # Line 3: Grid type (Gamma, Monkhorst-Pack, etc.)
         if len(lines) > 2:
             line3 = lines[2].strip().upper()
-            if line3.startswith('G'):
+            if line3.startswith("G"):
                 formatted_lines.append("Gamma")
-            elif line3.startswith('M'):
+            elif line3.startswith("M"):
                 formatted_lines.append("Monkhorst-Pack")
             elif line3 == "L":
                 formatted_lines.append("Line-mode")
@@ -327,14 +370,14 @@ class FormattingProvider:
         for i in range(4, len(lines)):
             line = lines[i]
             stripped = line.strip()
-            if not stripped or stripped.startswith('#'):
+            if not stripped or stripped.startswith("#"):
                 formatted_lines.append(stripped)
                 continue
 
             # Extract comment if present
             comment = ""
-            if '#' in line:
-                parts = line.split('#', 1)
+            if "#" in line:
+                parts = line.split("#", 1)
                 line = parts[0]
                 comment = "  #" + parts[1]
 
@@ -352,7 +395,7 @@ class FormattingProvider:
             else:
                 formatted_lines.append(stripped)
 
-        formatted_content = '\n'.join(formatted_lines)
+        formatted_content = "\n".join(formatted_lines)
         end_line = len(lines) - 1
         end_char = len(lines[end_line]) if lines else 0
 
@@ -360,8 +403,8 @@ class FormattingProvider:
             TextEdit(
                 range=Range(
                     start=Position(line=0, character=0),
-                    end=Position(line=end_line, character=end_char)
+                    end=Position(line=end_line, character=end_char),
                 ),
-                new_text=formatted_content
+                new_text=formatted_content,
             )
         ]

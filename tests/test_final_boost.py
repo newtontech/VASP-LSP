@@ -3,14 +3,19 @@ Final tests to reach 100% coverage.
 Tests for edge cases and missing branches.
 """
 
-import pytest
-from vasp_lsp.parsers.kpoints_parser import KPOINTSParser, KPOINTSMode
-from vasp_lsp.parsers.poscar_parser import POSCARParser
-from vasp_lsp.parsers.incar_parser import INCARParser
-from vasp_lsp.features.hover import HoverProvider
+from lsprotocol.types import (
+    CompletionParams,
+    HoverParams,
+    Position,
+    TextDocumentIdentifier,
+)
+
 from vasp_lsp.features.completion import CompletionProvider
 from vasp_lsp.features.diagnostics import DiagnosticsProvider
-from lsprotocol.types import HoverParams, Position, CompletionParams, TextDocumentIdentifier
+from vasp_lsp.features.hover import HoverProvider
+from vasp_lsp.parsers.incar_parser import INCARParser
+from vasp_lsp.parsers.kpoints_parser import KPOINTSMode, KPOINTSParser
+from vasp_lsp.parsers.poscar_parser import POSCARParser
 
 
 class TestKPOINTSParserEdgeCases:
@@ -26,10 +31,10 @@ UnknownType
 """
         parser = KPOINTSParser(content)
         data = parser.parse()
-        
+
         assert data is None
         assert len(parser.get_errors()) > 0
-        assert "Unknown coordinate" in parser.get_errors()[0]['message']
+        assert "Unknown coordinate" in parser.get_errors()[0]["message"]
 
     def test_cartesian_explicit_mode(self):
         """Test explicit mode with Cartesian coordinates (C prefix)."""
@@ -41,7 +46,7 @@ Cartesian
 """
         parser = KPOINTSParser(content)
         data = parser.parse()
-        
+
         assert data is not None
         assert data.mode == KPOINTSMode.EXPLICIT
         assert len(data.kpoints) == 2
@@ -56,7 +61,7 @@ K
 """
         parser = KPOINTSParser(content)
         data = parser.parse()
-        
+
         assert data is not None
         assert data.mode == KPOINTSMode.EXPLICIT
 
@@ -69,7 +74,7 @@ a b c
 """
         parser = KPOINTSParser(content)
         data = parser.parse()
-        
+
         assert data is None
         assert len(parser.get_errors()) > 0
 
@@ -82,10 +87,10 @@ Gamma
 """
         parser = KPOINTSParser(content)
         data = parser.parse()
-        
+
         assert data is None
         assert len(parser.get_errors()) > 0
-        assert "requires 3 grid values" in parser.get_errors()[0]['message']
+        assert "requires 3 grid values" in parser.get_errors()[0]["message"]
 
     def test_gamma_monkhorst_invalid_grid(self):
         """Test Gamma/Monkhorst mode with invalid grid values."""
@@ -96,7 +101,7 @@ a b c
 """
         parser = KPOINTSParser(content)
         data = parser.parse()
-        
+
         assert data is None
         assert len(parser.get_errors()) > 0
 
@@ -114,7 +119,7 @@ Reciprocal
 """
         parser = KPOINTSParser(content)
         data = parser.parse()
-        
+
         # Line mode may have issues, just check it doesn't crash
         if data is not None:
             assert data.mode == KPOINTSMode.LINE_MODE
@@ -131,7 +136,7 @@ invalid data here
 """
         parser = KPOINTSParser(content)
         data = parser.parse()
-        
+
         # Should handle gracefully - returns None on error
         assert data is None or len(parser.get_errors()) >= 0
 
@@ -144,7 +149,7 @@ C
 """
         parser = KPOINTSParser(content)
         data = parser.parse()
-        
+
         # Should return None due to missing k-points
         # Or return data with errors
         if data is None:
@@ -157,7 +162,7 @@ C
 """
         parser = KPOINTSParser(content)
         data = parser.parse()
-        
+
         # Should return None with error
         assert data is None
         assert len(parser.get_errors()) > 0
@@ -172,7 +177,7 @@ Reciprocal
 """
         parser = KPOINTSParser(content)
         data = parser.parse()
-        
+
         # Should use default line_density
         if data is not None:
             assert data.mode == KPOINTSMode.LINE_MODE
@@ -189,7 +194,7 @@ Reciprocal
 """
         parser = KPOINTSParser(content)
         data = parser.parse()
-        
+
         assert data is not None
         assert data.mode == KPOINTSMode.EXPLICIT
         assert len(data.kpoints) == 3
@@ -204,7 +209,7 @@ Reciprocal
 """
         parser = KPOINTSParser(content)
         data = parser.parse()
-        
+
         assert data is None
         assert len(parser.get_errors()) > 0
 
@@ -227,10 +232,10 @@ Direct
 """
         parser = POSCARParser(content)
         data = parser.parse()
-        
+
         assert data is None
         assert len(parser.get_errors()) > 0
-        assert "Mismatch" in parser.get_errors()[0]['message']
+        assert "Mismatch" in parser.get_errors()[0]["message"]
 
     def test_selective_dynamics_missing_flags(self):
         """Test selective dynamics with missing T/F flags (default to True)."""
@@ -247,7 +252,7 @@ Direct
 """
         parser = POSCARParser(content)
         data = parser.parse()
-        
+
         assert data is not None
         assert data.selective_dynamics is not None
         # Should default to [True, True, True]
@@ -268,7 +273,7 @@ Direct
 """
         parser = POSCARParser(content)
         data = parser.parse()
-        
+
         assert data is not None
         assert data.selective_dynamics is not None
         # Should default to [True, True, True] since len(parts) < 6
@@ -290,7 +295,7 @@ Direct
 """
         parser = POSCARParser(content)
         data = parser.parse()
-        
+
         assert data is not None
         assert data.selective_dynamics is not None
         assert data.selective_dynamics[0] == [True, True, False]
@@ -310,7 +315,7 @@ Kartesian
 """
         parser = POSCARParser(content)
         data = parser.parse()
-        
+
         assert data is not None
         assert data.coordinate_type == "Cartesian"
 
@@ -328,7 +333,7 @@ Direct
 """
         parser = POSCARParser(content)
         data = parser.parse()
-        
+
         assert data is None
         assert len(parser.get_errors()) > 0
 
@@ -341,17 +346,17 @@ class TestINCARParserEdgeCases:
         content = "Some text without equals"
         parser = INCARParser(content)
         parser.parse()
-        
+
         errors = parser.get_errors()
         assert len(errors) > 0
-        assert "Invalid parameter format" in errors[0]['message']
+        assert "Invalid parameter format" in errors[0]["message"]
 
     def test_array_with_mixed_types(self):
         """Test array values with mixed types."""
         content = "MAGMOM = 5 3.5 -2 1"
         parser = INCARParser(content)
         params = parser.parse()
-        
+
         assert "MAGMOM" in params
         # Mixed int and float should be handled
         value = params["MAGMOM"].value
@@ -363,7 +368,7 @@ class TestINCARParserEdgeCases:
         content = "LDAUL = 2 0 1"
         parser = INCARParser(content)
         params = parser.parse()
-        
+
         assert "LDAUL" in params
         assert params["LDAUL"].value == [2, 0, 1]
 
@@ -398,11 +403,11 @@ class TestHoverProviderEdgeCases:
         """Test hover on unknown INCAR tag."""
         params = HoverParams(
             text_document=TextDocumentIdentifier(uri="file:///test/INCAR"),
-            position=Position(line=0, character=2)
+            position=Position(line=0, character=2),
         )
         content = "UNKNOWN_TAG = 520"
         result = self.hover.get_hover(params, content, "file:///test/INCAR")
-        
+
         # Should return None for unknown tag
         assert result is None
 
@@ -410,22 +415,22 @@ class TestHoverProviderEdgeCases:
         """Test hover with line number beyond content."""
         params = HoverParams(
             text_document=TextDocumentIdentifier(uri="file:///test/INCAR"),
-            position=Position(line=100, character=0)
+            position=Position(line=100, character=0),
         )
         content = "ENCUT = 520"
         result = self.hover.get_hover(params, content, "file:///test/INCAR")
-        
+
         assert result is None
 
     def test_hover_kpoints_file(self):
         """Test hover on KPOINTS file."""
         params = HoverParams(
             text_document=TextDocumentIdentifier(uri="file:///test/KPOINTS"),
-            position=Position(line=0, character=0)
+            position=Position(line=0, character=0),
         )
         content = "Comment\n0\nGamma\n4 4 4"
         result = self.hover.get_hover(params, content, "file:///test/KPOINTS")
-        
+
         assert result is not None
         assert "Comment" in result.contents.value
 
@@ -433,11 +438,11 @@ class TestHoverProviderEdgeCases:
         """Test hover on unknown file type."""
         params = HoverParams(
             text_document=TextDocumentIdentifier(uri="file:///test/UNKNOWN"),
-            position=Position(line=0, character=0)
+            position=Position(line=0, character=0),
         )
         content = "Some content"
         result = self.hover.get_hover(params, content, "file:///test/UNKNOWN")
-        
+
         assert result is None
 
 
@@ -471,11 +476,11 @@ class TestCompletionProviderEdgeCases:
         """Test completion with line beyond document."""
         params = CompletionParams(
             text_document=TextDocumentIdentifier(uri="file:///test/INCAR"),
-            position=Position(line=100, character=0)
+            position=Position(line=100, character=0),
         )
         content = "ENCUT = 520"
         result = self.completion.get_completions(params, content, "file:///test/INCAR")
-        
+
         assert result.is_incomplete is False
         assert result.items == []
 
@@ -483,11 +488,13 @@ class TestCompletionProviderEdgeCases:
         """Test completion for KPOINTS file."""
         params = CompletionParams(
             text_document=TextDocumentIdentifier(uri="file:///test/KPOINTS"),
-            position=Position(line=1, character=0)
+            position=Position(line=1, character=0),
         )
         content = "Comment\n\n"
-        result = self.completion.get_completions(params, content, "file:///test/KPOINTS")
-        
+        result = self.completion.get_completions(
+            params, content, "file:///test/KPOINTS"
+        )
+
         assert result.is_incomplete is False
         assert len(result.items) > 0
 
@@ -495,11 +502,13 @@ class TestCompletionProviderEdgeCases:
         """Test completion for unknown file type."""
         params = CompletionParams(
             text_document=TextDocumentIdentifier(uri="file:///test/UNKNOWN"),
-            position=Position(line=0, character=0)
+            position=Position(line=0, character=0),
         )
         content = "Some content"
-        result = self.completion.get_completions(params, content, "file:///test/UNKNOWN")
-        
+        result = self.completion.get_completions(
+            params, content, "file:///test/UNKNOWN"
+        )
+
         assert result.is_incomplete is False
         assert result.items == []
 
@@ -514,7 +523,7 @@ class TestDiagnosticsProviderEdgeCases:
         """Test validation when value is above maximum range."""
         content = "ISMEAR = 100"  # ISMEAR typically has a valid range
         result = self.diagnostics.get_diagnostics(content, "file:///test/INCAR")
-        
+
         # Should generate a warning if there's a range check
         assert isinstance(result, list)
 
@@ -522,7 +531,7 @@ class TestDiagnosticsProviderEdgeCases:
         """Test diagnostics for KPOINTS file."""
         content = "Comment\n0\nGamma\n4 4 4"
         result = self.diagnostics.get_diagnostics(content, "file:///test/KPOINTS")
-        
+
         # Currently returns empty list (TODO)
         assert isinstance(result, list)
 
@@ -530,7 +539,7 @@ class TestDiagnosticsProviderEdgeCases:
         """Test diagnostics for POSCAR file."""
         content = "Comment\n1.0\n1.0 0.0 0.0\n0.0 1.0 0.0\n0.0 0.0 1.0\nH\n1\nDirect\n0.0 0.0 0.0"
         result = self.diagnostics.get_diagnostics(content, "file:///test/POSCAR")
-        
+
         # Currently returns empty list (TODO)
         assert isinstance(result, list)
 
@@ -538,5 +547,5 @@ class TestDiagnosticsProviderEdgeCases:
         """Test diagnostics for unknown file type."""
         content = "Some content"
         result = self.diagnostics.get_diagnostics(content, "file:///test/UNKNOWN")
-        
+
         assert result == []

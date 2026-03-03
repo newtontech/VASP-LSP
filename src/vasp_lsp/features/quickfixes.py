@@ -31,7 +31,7 @@ class QuickFixesProvider:
         document_content: str,
         document_uri: str,
         diagnostics: List[Diagnostic],
-        range: Range
+        range: Range,
     ) -> List[CodeAction]:
         """Get available code actions for the given diagnostics.
 
@@ -46,39 +46,36 @@ class QuickFixesProvider:
         """
         file_type = self._get_file_type(document_uri)
 
-        if file_type == 'INCAR':
+        if file_type == "INCAR":
             return self._get_incar_code_actions(document_content, diagnostics, range)
-        elif file_type == 'POSCAR':
+        elif file_type == "POSCAR":
             return self._get_poscar_code_actions(document_content, diagnostics, range)
-        elif file_type == 'KPOINTS':
+        elif file_type == "KPOINTS":
             return self._get_kpoints_code_actions(document_content, diagnostics, range)
 
         return []
 
     def _get_file_type(self, uri: str) -> str:
         """Determine file type from URI."""
-        filename = uri.split('/')[-1].upper()
+        filename = uri.split("/")[-1].upper()
 
-        if 'INCAR' in filename:
-            return 'INCAR'
-        if 'POSCAR' in filename or 'CONTCAR' in filename:
-            return 'POSCAR'
-        if 'KPOINTS' in filename:
-            return 'KPOINTS'
+        if "INCAR" in filename:
+            return "INCAR"
+        if "POSCAR" in filename or "CONTCAR" in filename:
+            return "POSCAR"
+        if "KPOINTS" in filename:
+            return "KPOINTS"
 
-        return 'UNKNOWN'
+        return "UNKNOWN"
 
     def _get_incar_code_actions(
-        self,
-        content: str,
-        diagnostics: List[Diagnostic],
-        range: Range
+        self, content: str, diagnostics: List[Diagnostic], range: Range
     ) -> List[CodeAction]:
         """Get code actions for INCAR files."""
         actions = []
         parser = INCARParser(content)
         parser.parse()
-        lines = content.split('\n')
+        lines = content.split("\n")
 
         # Track which fixes we've added to avoid duplicates
         added_fixes = set()
@@ -87,8 +84,8 @@ class QuickFixesProvider:
             message = diagnostic.message.lower()
 
             # Fix 1: Add missing SIGMA when ISMEAR >= 0
-            if 'sigma' in message and 'ismear' in message:
-                fix_key = 'add_sigma'
+            if "sigma" in message and "ismear" in message:
+                fix_key = "add_sigma"
                 if fix_key not in added_fixes:
                     action = self._create_add_sigma_action(lines, diagnostic)
                     if action:
@@ -96,21 +93,22 @@ class QuickFixesProvider:
                         added_fixes.add(fix_key)
 
             # Fix 2: Remove NPAR when NCORE is set
-            if 'npar' in message and 'ncore' in message:
-                fix_key = 'remove_npar'
+            if "npar" in message and "ncore" in message:
+                fix_key = "remove_npar"
                 if fix_key not in added_fixes:
                     action = self._create_remove_line_action(
-                        lines, diagnostic,
+                        lines,
+                        diagnostic,
                         "Remove NPAR (use NCORE instead)",
-                        "Use NCORE instead of NPAR for parallelization control"
+                        "Use NCORE instead of NPAR for parallelization control",
                     )
                     if action:
                         actions.append(action)
                         added_fixes.add(fix_key)
 
             # Fix 3: Add MAGMOM when ISPIN=2
-            if 'magmom' in message and 'ispin' in message:
-                fix_key = 'add_magmom'
+            if "magmom" in message and "ispin" in message:
+                fix_key = "add_magmom"
                 if fix_key not in added_fixes:
                     action = self._create_add_magmom_action(lines, diagnostic)
                     if action:
@@ -118,45 +116,47 @@ class QuickFixesProvider:
                         added_fixes.add(fix_key)
 
             # Fix 4: Add missing LDAU parameters
-            if 'ldau' in message and 'ldautype' in message:
-                fix_key = 'add_ldautype'
+            if "ldau" in message and "ldautype" in message:
+                fix_key = "add_ldautype"
                 if fix_key not in added_fixes:
                     action = self._create_add_ldau_param_action(
-                        lines, diagnostic, 'LDAUTYPE', '2'
+                        lines, diagnostic, "LDAUTYPE", "2"
                     )
                     if action:
                         actions.append(action)
                         added_fixes.add(fix_key)
 
-            if 'ldau' in message and 'ldaul' in message:
-                fix_key = 'add_ldaul'
+            if "ldau" in message and "ldaul" in message:
+                fix_key = "add_ldaul"
                 if fix_key not in added_fixes:
                     action = self._create_add_ldau_param_action(
-                        lines, diagnostic, 'LDAUL', '-1 -1 -1'
+                        lines, diagnostic, "LDAUL", "-1 -1 -1"
                     )
                     if action:
                         actions.append(action)
                         added_fixes.add(fix_key)
 
-            if 'ldau' in message and 'ldauu' in message:
-                fix_key = 'add_ldauu'
+            if "ldau" in message and "ldauu" in message:
+                fix_key = "add_ldauu"
                 if fix_key not in added_fixes:
                     action = self._create_add_ldau_param_action(
-                        lines, diagnostic, 'LDAUU', '0 0 0'
+                        lines, diagnostic, "LDAUU", "0 0 0"
                     )
                     if action:
                         actions.append(action)
                         added_fixes.add(fix_key)
 
             # Fix 5: Fix common typos in INCAR tags
-            if 'unknown incar tag' in message:
+            if "unknown incar tag" in message:
                 action = self._create_fix_typo_action(lines, diagnostic, content)
                 if action:
                     actions.append(action)
 
         return actions
 
-    def _create_add_sigma_action(self, lines: List[str], diagnostic: Diagnostic) -> Optional[CodeAction]:
+    def _create_add_sigma_action(
+        self, lines: List[str], diagnostic: Diagnostic
+    ) -> Optional[CodeAction]:
         """Create action to add SIGMA parameter."""
         line_num = diagnostic.range.start.line
 
@@ -173,21 +173,17 @@ class QuickFixesProvider:
                         TextEdit(
                             range=Range(
                                 start=Position(line=insert_line, character=0),
-                                end=Position(line=insert_line, character=0)
+                                end=Position(line=insert_line, character=0),
                             ),
-                            new_text="SIGMA = 0.2  # Default for ISMEAR >= 0\\n"
+                            new_text="SIGMA = 0.2  # Default for ISMEAR >= 0\\n",
                         )
                     ]
                 }
-            )
+            ),
         )
 
     def _create_remove_line_action(
-        self,
-        lines: List[str],
-        diagnostic: Diagnostic,
-        title: str,
-        description: str
+        self, lines: List[str], diagnostic: Diagnostic, title: str, description: str
     ) -> Optional[CodeAction]:
         """Create action to remove a line."""
         line_num = diagnostic.range.start.line
@@ -202,16 +198,18 @@ class QuickFixesProvider:
                         TextEdit(
                             range=Range(
                                 start=Position(line=line_num, character=0),
-                                end=Position(line=line_num + 1, character=0)
+                                end=Position(line=line_num + 1, character=0),
                             ),
-                            new_text=""
+                            new_text="",
                         )
                     ]
                 }
-            )
+            ),
         )
 
-    def _create_add_magmom_action(self, lines: List[str], diagnostic: Diagnostic) -> Optional[CodeAction]:
+    def _create_add_magmom_action(
+        self, lines: List[str], diagnostic: Diagnostic
+    ) -> Optional[CodeAction]:
         """Create action to add MAGMOM parameter."""
         line_num = diagnostic.range.start.line
         insert_line = line_num + 1
@@ -226,13 +224,13 @@ class QuickFixesProvider:
                         TextEdit(
                             range=Range(
                                 start=Position(line=insert_line, character=0),
-                                end=Position(line=insert_line, character=0)
+                                end=Position(line=insert_line, character=0),
                             ),
-                            new_text="MAGMOM = 1.0  # Default initial magnetic moment\\n"
+                            new_text="MAGMOM = 1.0  # Default initial magnetic moment\\n",
                         )
                     ]
                 }
-            )
+            ),
         )
 
     def _create_add_ldau_param_action(
@@ -240,7 +238,7 @@ class QuickFixesProvider:
         lines: List[str],
         diagnostic: Diagnostic,
         param_name: str,
-        default_value: str
+        default_value: str,
     ) -> Optional[CodeAction]:
         """Create action to add LDAU parameter."""
         line_num = diagnostic.range.start.line
@@ -256,47 +254,44 @@ class QuickFixesProvider:
                         TextEdit(
                             range=Range(
                                 start=Position(line=insert_line, character=0),
-                                end=Position(line=insert_line, character=0)
+                                end=Position(line=insert_line, character=0),
                             ),
-                            new_text=f"{param_name} = {default_value}\\n"
+                            new_text=f"{param_name} = {default_value}\\n",
                         )
                     ]
                 }
-            )
+            ),
         )
 
     def _create_fix_typo_action(
-        self,
-        lines: List[str],
-        diagnostic: Diagnostic,
-        content: str
+        self, lines: List[str], diagnostic: Diagnostic, content: str
     ) -> Optional[CodeAction]:
         """Create action to fix common typos in INCAR tags."""
         # Extract the unknown tag name
         message = diagnostic.message
-        if 'Unknown INCAR tag:' not in message:
+        if "Unknown INCAR tag:" not in message:
             return None
 
-        tag_name = message.split('Unknown INCAR tag:')[-1].strip()
+        tag_name = message.split("Unknown INCAR tag:")[-1].strip()
 
         # Common typo mappings
         typo_fixes = {
-            'ENCUTT': 'ENCUT',
-            'ENCO': 'ENCUT',
-            'ISMER': 'ISMEAR',
-            'ISMAER': 'ISMEAR',
-            'SIGM': 'SIGMA',
-            'SIG': 'SIGMA',
-            'PRECission': 'PREC',
-            'ALGOO': 'ALGO',
-            'IBRIO': 'IBRION',
-            'IBRIONN': 'IBRION',
-            'NSWW': 'NSW',
-            'EDIF': 'EDIFF',
-            'EDIFFG': 'EDIFFG',  # Valid but might be typo
-            'LREAL': 'LREAL',
-            'LWAV': 'LWAVE',
-            'LCHARGG': 'LCHARG',
+            "ENCUTT": "ENCUT",
+            "ENCO": "ENCUT",
+            "ISMER": "ISMEAR",
+            "ISMAER": "ISMEAR",
+            "SIGM": "SIGMA",
+            "SIG": "SIGMA",
+            "PRECission": "PREC",
+            "ALGOO": "ALGO",
+            "IBRIO": "IBRION",
+            "IBRIONN": "IBRION",
+            "NSWW": "NSW",
+            "EDIF": "EDIFF",
+            "EDIFFG": "EDIFFG",  # Valid but might be typo
+            "LREAL": "LREAL",
+            "LWAV": "LWAVE",
+            "LCHARGG": "LCHARG",
         }
 
         # Find closest match
@@ -331,13 +326,13 @@ class QuickFixesProvider:
                         TextEdit(
                             range=Range(
                                 start=Position(line=line_num, character=start_col),
-                                end=Position(line=line_num, character=end_col)
+                                end=Position(line=line_num, character=end_col),
                             ),
-                            new_text=fixed_tag
+                            new_text=fixed_tag,
                         )
                     ]
                 }
-            )
+            ),
         )
 
     def _find_similar_tag(self, tag_name: str) -> Optional[str]:
@@ -370,20 +365,14 @@ class QuickFixesProvider:
         return matches / max_len
 
     def _get_poscar_code_actions(
-        self,
-        content: str,
-        diagnostics: List[Diagnostic],
-        range: Range
+        self, content: str, diagnostics: List[Diagnostic], range: Range
     ) -> List[CodeAction]:
         """Get code actions for POSCAR files."""
         # TODO: Implement POSCAR quick fixes
         return []
 
     def _get_kpoints_code_actions(
-        self,
-        content: str,
-        diagnostics: List[Diagnostic],
-        range: Range
+        self, content: str, diagnostics: List[Diagnostic], range: Range
     ) -> List[CodeAction]:
         """Get code actions for KPOINTS files."""
         # TODO: Implement KPOINTS quick fixes

@@ -2,8 +2,7 @@
 Tests for POSCAR parser.
 """
 
-import pytest
-from vasp_lsp.parsers.poscar_parser import POSCARParser, POSCARData
+from vasp_lsp.parsers.poscar_parser import POSCARParser
 
 
 class TestPOSCARParser:
@@ -23,11 +22,15 @@ Direct
 """
         parser = POSCARParser(content)
         data = parser.parse()
-        
+
         assert data is not None
         assert data.system_comment == "Simple cubic"
         assert data.scale_factor == 1.0
-        assert data.lattice_vectors == [[3.0, 0.0, 0.0], [0.0, 3.0, 0.0], [0.0, 0.0, 3.0]]
+        assert data.lattice_vectors == [
+            [3.0, 0.0, 0.0],
+            [0.0, 3.0, 0.0],
+            [0.0, 0.0, 3.0],
+        ]
         assert data.atom_types == ["Si"]
         assert data.atom_counts == [1]
         assert data.coordinate_type == "Direct"
@@ -48,7 +51,7 @@ Direct
 """
         parser = POSCARParser(content)
         data = parser.parse()
-        
+
         assert data is not None
         assert data.atom_types == ["Type1"]  # Generic types
         assert data.atom_counts == [2]
@@ -70,7 +73,7 @@ Direct
 """
         parser = POSCARParser(content)
         data = parser.parse()
-        
+
         assert data is not None
         assert data.atom_types == ["Si", "O"]
         assert data.atom_counts == [2, 1]
@@ -90,7 +93,7 @@ Cartesian
 """
         parser = POSCARParser(content)
         data = parser.parse()
-        
+
         assert data is not None
         assert data.coordinate_type == "Cartesian"
         assert data.coordinates[0] == [1.0, 1.0, 1.0]
@@ -111,7 +114,7 @@ Direct
 """
         parser = POSCARParser(content)
         data = parser.parse()
-        
+
         assert data is not None
         assert data.selective_dynamics is not None
         assert data.selective_dynamics[0] == [True, True, True]
@@ -131,7 +134,7 @@ Direct
 """
         parser = POSCARParser(content)
         data = parser.parse()
-        
+
         assert data is not None
         assert data.scale_factor == -1.0
 
@@ -149,7 +152,7 @@ Direct
 """
         parser = POSCARParser(content)
         data = parser.parse()
-        
+
         assert data is None
         assert len(parser.get_errors()) > 0
 
@@ -167,7 +170,7 @@ Direct
 """
         parser = POSCARParser(content)
         data = parser.parse()
-        
+
         assert data is None
         assert len(parser.get_errors()) > 0
 
@@ -185,7 +188,7 @@ Unknown
 """
         parser = POSCARParser(content)
         data = parser.parse()
-        
+
         assert data is None
         assert len(parser.get_errors()) > 0
 
@@ -203,7 +206,7 @@ Direct
 """
         parser = POSCARParser(content)
         data = parser.parse()
-        
+
         assert data is None
         assert len(parser.get_errors()) > 0
 
@@ -221,7 +224,7 @@ Direct
 """
         parser = POSCARParser(content)
         parser.parse()
-        
+
         errors = parser.get_errors()
         assert isinstance(errors, list)
         assert len(errors) > 0

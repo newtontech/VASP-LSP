@@ -2,18 +2,17 @@
 Final coverage boost tests to reach 95%+ coverage.
 """
 
-import pytest
 from unittest.mock import patch
-import sys
 
-from vasp_lsp.parsers.kpoints_parser import KPOINTSParser, KPOINTSMode
-from vasp_lsp.parsers.poscar_parser import POSCARParser
-from vasp_lsp.parsers.incar_parser import INCARParser
-from vasp_lsp.schemas.incar_tags import INCARTag
-from vasp_lsp.features.diagnostics import DiagnosticsProvider
-from vasp_lsp.features.completion import CompletionProvider
-from vasp_lsp.features.hover import HoverProvider
 from lsprotocol.types import Position
+
+from vasp_lsp.features.completion import CompletionProvider
+from vasp_lsp.features.diagnostics import DiagnosticsProvider
+from vasp_lsp.features.hover import HoverProvider
+from vasp_lsp.parsers.incar_parser import INCARParser
+from vasp_lsp.parsers.kpoints_parser import KPOINTSParser
+from vasp_lsp.parsers.poscar_parser import POSCARParser
+from vasp_lsp.schemas.incar_tags import INCARTag
 
 
 class TestKPOINTSParserFinal:
@@ -192,36 +191,36 @@ class TestCompletionFinal:
     def test_get_file_type_incar_exact(self):
         """Test exact INCAR match - covers line 52."""
         provider = CompletionProvider()
-        assert provider._get_file_type("file:///INCAR") == 'INCAR'
+        assert provider._get_file_type("file:///INCAR") == "INCAR"
 
     def test_get_file_type_incar_dot(self):
         """Test INCAR. match - covers line 52."""
         provider = CompletionProvider()
-        assert provider._get_file_type("file:///INCAR.") == 'INCAR'
+        assert provider._get_file_type("file:///INCAR.") == "INCAR"
 
     def test_get_file_type_incar_vasp(self):
         """Test INCAR.VASP match - covers line 52."""
         provider = CompletionProvider()
-        assert provider._get_file_type("file:///INCAR.VASP") == 'INCAR'
+        assert provider._get_file_type("file:///INCAR.VASP") == "INCAR"
 
     def test_get_file_type_poscar_exact(self):
         """Test exact POSCAR match - covers line 54."""
         provider = CompletionProvider()
-        assert provider._get_file_type("file:///POSCAR") == 'POSCAR'
-        assert provider._get_file_type("file:///CONTCAR") == 'POSCAR'
+        assert provider._get_file_type("file:///POSCAR") == "POSCAR"
+        assert provider._get_file_type("file:///CONTCAR") == "POSCAR"
 
     def test_get_file_type_poscar_dot(self):
         """Test POSCAR. and CONTCAR. match - covers line 54."""
         provider = CompletionProvider()
-        assert provider._get_file_type("file:///POSCAR.") == 'POSCAR'
-        assert provider._get_file_type("file:///CONTCAR.") == 'POSCAR'
+        assert provider._get_file_type("file:///POSCAR.") == "POSCAR"
+        assert provider._get_file_type("file:///CONTCAR.") == "POSCAR"
 
     def test_get_file_type_kpoints_exact(self):
         """Test exact KPOINTS match - covers lines 81, 83, 85."""
         provider = CompletionProvider()
-        assert provider._get_file_type("file:///KPOINTS") == 'KPOINTS'
-        assert provider._get_file_type("file:///KPOINTS.") == 'KPOINTS'
-        assert provider._get_file_type("file:///KPOINTS.VASP") == 'KPOINTS'
+        assert provider._get_file_type("file:///KPOINTS") == "KPOINTS"
+        assert provider._get_file_type("file:///KPOINTS.") == "KPOINTS"
+        assert provider._get_file_type("file:///KPOINTS.VASP") == "KPOINTS"
 
 
 class TestHoverFinal:
@@ -230,13 +229,13 @@ class TestHoverFinal:
     def test_get_file_type_incar_path(self):
         """Test file type with path - covers line 76."""
         provider = HoverProvider()
-        assert provider._get_file_type("file:///some/deep/path/INCAR") == 'INCAR'
+        assert provider._get_file_type("file:///some/deep/path/INCAR") == "INCAR"
 
     def test_get_file_type_poscar_path(self):
         """Test POSCAR type with path - covers line 83."""
         provider = HoverProvider()
-        assert provider._get_file_type("file:///path/to/POSCAR") == 'POSCAR'
-        assert provider._get_file_type("file:///another/path/CONTCAR") == 'POSCAR'
+        assert provider._get_file_type("file:///path/to/POSCAR") == "POSCAR"
+        assert provider._get_file_type("file:///another/path/CONTCAR") == "POSCAR"
 
     def test_hover_no_word_at_pos(self):
         """Test hover with no word - covers line 135."""
@@ -296,7 +295,7 @@ class TestINCARTagsFinal:
             valid_range=(0.0, 10.0),
             enum_values=["A", "B"],
             requires=["TAG1", "TAG2"],
-            conflicts_with=["BAD_TAG"]
+            conflicts_with=["BAD_TAG"],
         )
         md = tag.to_markdown()
         assert "**Range:**" in md
@@ -311,8 +310,9 @@ class TestServerFinal:
     def test_main_no_args(self):
         """Test main with no args - covers line 190."""
         from vasp_lsp.server import main, server
-        with patch.object(server, 'start_io') as mock_io:
-            with patch('sys.argv', ['vasp-lsp']):
+
+        with patch.object(server, "start_io") as mock_io:
+            with patch("sys.argv", ["vasp-lsp"]):
                 try:
                     main()
                 except SystemExit:

@@ -2,15 +2,16 @@
 Tests to achieve 100% coverage for all remaining lines.
 """
 
-import pytest
-from unittest.mock import patch, MagicMock
-from vasp_lsp.parsers.kpoints_parser import KPOINTSParser, KPOINTSMode
-from vasp_lsp.parsers.poscar_parser import POSCARParser
-from vasp_lsp.parsers.incar_parser import INCARParser
-from vasp_lsp.features.hover import HoverProvider
+from unittest.mock import patch
+
+from lsprotocol.types import HoverParams, Position, TextDocumentIdentifier
+
 from vasp_lsp.features.completion import CompletionProvider
 from vasp_lsp.features.diagnostics import DiagnosticsProvider
-from lsprotocol.types import HoverParams, Position, CompletionParams, TextDocumentIdentifier
+from vasp_lsp.features.hover import HoverProvider
+from vasp_lsp.parsers.incar_parser import INCARParser
+from vasp_lsp.parsers.kpoints_parser import KPOINTSParser
+from vasp_lsp.parsers.poscar_parser import POSCARParser
 
 
 class TestKPOINTSParserFullCoverage:
@@ -23,10 +24,10 @@ not_a_number_or_mode
 """
         parser = KPOINTSParser(content)
         data = parser.parse()
-        
+
         assert data is None
         assert len(parser.get_errors()) > 0
-        assert "Invalid k-point specification" in parser.get_errors()[0]['message']
+        assert "Invalid k-point specification" in parser.get_errors()[0]["message"]
 
     def test_unknown_coordinate_type_full(self):
         """Test unknown coordinate/generation type (lines 92-97)."""
@@ -38,11 +39,11 @@ XYZ
 """
         parser = KPOINTSParser(content)
         data = parser.parse()
-        
+
         assert data is None
         errors = parser.get_errors()
         assert len(errors) > 0
-        assert "Unknown coordinate" in errors[0]['message']
+        assert "Unknown coordinate" in errors[0]["message"]
 
     def test_automatic_mode_error(self):
         """Test automatic mode parsing error (lines 122-128)."""
@@ -53,7 +54,7 @@ Automatic
 """
         parser = KPOINTSParser(content)
         data = parser.parse()
-        
+
         assert data is None
         assert len(parser.get_errors()) > 0
 
@@ -66,7 +67,7 @@ x y z
 """
         parser = KPOINTSParser(content)
         data = parser.parse()
-        
+
         assert data is None
         assert len(parser.get_errors()) > 0
 
@@ -80,7 +81,7 @@ abc def ghi
 """
         parser = KPOINTSParser(content)
         data = parser.parse()
-        
+
         # Line mode with invalid data
         assert data is None or len(parser.get_errors()) >= 0
 
@@ -90,7 +91,7 @@ abc def ghi
 20"""
         parser = KPOINTSParser(content)
         data = parser.parse()
-        
+
         # Should handle index error gracefully
         assert data is None or len(parser.get_errors()) >= 0
 
@@ -104,21 +105,23 @@ class TestINCARParserFullCoverage:
         # The exception handler is in the parse() method
         content = "TAG = value"
         parser = INCARParser(content)
-        
+
         # Mock _parse_line to raise an exception
-        with patch.object(parser, '_parse_line', side_effect=RuntimeError("Test error")):
-            params = parser.parse()
-            
+        with patch.object(
+            parser, "_parse_line", side_effect=RuntimeError("Test error")
+        ):
+            _ = parser.parse()
+
             # Should have caught the exception
             assert len(parser.get_errors()) > 0
-            assert "Parse error" in parser.get_errors()[0]['message']
+            assert "Parse error" in parser.get_errors()[0]["message"]
 
     def test_string_value_return(self):
         """Test returning string value (line 160-161)."""
         content = "SYSTEM = My Test System"
         parser = INCARParser(content)
         params = parser.parse()
-        
+
         assert "SYSTEM" in params
         # Should be returned as string (no spaces in value after split)
         # Actually the value is "My Test System" which gets split
@@ -126,7 +129,7 @@ class TestINCARParserFullCoverage:
         content2 = "SYSTEM = TestSystem123"
         parser2 = INCARParser(content2)
         params2 = parser2.parse()
-        
+
         assert "SYSTEM" in params2
         assert params2["SYSTEM"].value == "TestSystem123"
 
@@ -147,13 +150,13 @@ Direct
 0.0 0.0 0.0
 """
         parser = POSCARParser(content)
-        
+
         # Mock to trigger the general exception handler
-        original_split = parser.lines
-        
-        with patch.object(parser, 'lines', side_effect=RuntimeError("Test error")):
+        _ = parser.lines
+
+        with patch.object(parser, "lines", side_effect=RuntimeError("Test error")):
             data = parser.parse()
-            
+
             # Should have caught the exception
             if data is None:
                 assert len(parser.get_errors()) > 0
@@ -170,11 +173,11 @@ class TestHoverFullCoverage:
         # Test with column at end of word
         result = self.hover._get_word_at_position("test", 3)
         assert result == "test"
-        
+
         # Test with column in middle of word
         result = self.hover._get_word_at_position("testing", 3)
         assert result == "testing"
-        
+
         # Test with word at start of line
         result = self.hover._get_word_at_position("word rest", 0)
         assert result == "word"
@@ -183,11 +186,11 @@ class TestHoverFullCoverage:
         """Test POSCAR hover with high line number."""
         params = HoverParams(
             text_document=TextDocumentIdentifier(uri="file:///test/POSCAR"),
-            position=Position(line=100, character=0)
+            position=Position(line=100, character=0),
         )
         content = "Comment\n1.0\n1.0 0.0 0.0\n0.0 1.0 0.0\n0.0 0.0 1.0\nH\n1\nDirect\n0.0 0.0 0.0"
         result = self.hover.get_hover(params, content, "file:///test/POSCAR")
-        
+
         # High line numbers return None
         assert result is None
 
@@ -202,13 +205,13 @@ class TestCompletionFullCoverage:
         """Test prefix-based file type detection (lines 81, 83, 85)."""
         # Test INCAR prefix
         assert self.completion._get_file_type("file:///test/INCAR_relax") == "INCAR"
-        
+
         # Test POSCAR prefix
         assert self.completion._get_file_type("file:///test/POSCAR_final") == "POSCAR"
-        
+
         # Test CONTCAR prefix
         assert self.completion._get_file_type("file:///test/CONTCAR_final") == "POSCAR"
-        
+
         # Test KPOINTS prefix
         assert self.completion._get_file_type("file:///test/KPOINTS_relax") == "KPOINTS"
 
@@ -223,7 +226,7 @@ class TestDiagnosticsFullCoverage:
         """Test max value range check (line 153)."""
         # Find a tag with valid_range that has a max value
         from vasp_lsp.schemas.incar_tags import INCAR_TAGS
-        
+
         # Look for a tag with valid_range
         for tag_name, tag in INCAR_TAGS.items():
             if tag.valid_range and tag.valid_range[1] is not None:
@@ -231,14 +234,14 @@ class TestDiagnosticsFullCoverage:
                 max_val = tag.valid_range[1]
                 content = f"{tag_name} = {max_val + 100}"
                 result = self.diagnostics.get_diagnostics(content, "file:///test/INCAR")
-                
+
                 # Should generate a warning
                 assert isinstance(result, list)
                 # Check if there's a warning about max value
                 for diag in result:
                     if "above maximum" in diag.message.lower():
                         return  # Found the expected diagnostic
-                
+
         # If no tag with max range found, test still passes
         assert True
 
@@ -248,16 +251,19 @@ class TestServerFullCoverage:
 
     def test_tcp_mode(self):
         """Test TCP mode initialization (line 190)."""
-        from vasp_lsp.server import main, server
         import sys
-        
+
+        from vasp_lsp.server import main, server
+
         # Mock sys.argv for TCP mode
-        with patch.object(sys, 'argv', ['vasp-lsp', '--tcp', '--host', '127.0.0.1', '--port', '2087']):
-            with patch.object(server, 'start_tcp') as mock_tcp:
+        with patch.object(
+            sys, "argv", ["vasp-lsp", "--tcp", "--host", "127.0.0.1", "--port", "2087"]
+        ):
+            with patch.object(server, "start_tcp") as mock_tcp:
                 try:
                     main()
                 except SystemExit:
                     pass
-                
+
                 # Verify TCP mode was called
-                mock_tcp.assert_called_once_with('127.0.0.1', 2087)
+                mock_tcp.assert_called_once_with("127.0.0.1", 2087)

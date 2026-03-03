@@ -3,19 +3,18 @@ Tests to boost coverage to 100%.
 Covers missing lines in kpoints_parser, incar_tags, server, diagnostics, etc.
 """
 
-import pytest
-from unittest.mock import patch, MagicMock
-import sys
-import io
+from unittest.mock import patch
 
-from vasp_lsp.parsers.kpoints_parser import KPOINTSParser, KPOINTSMode, KPOINTSData
-from vasp_lsp.parsers.poscar_parser import POSCARParser
-from vasp_lsp.parsers.incar_parser import INCARParser
-from vasp_lsp.schemas.incar_tags import INCARTag, INCAR_TAGS, search_tags
-from vasp_lsp.features.diagnostics import DiagnosticsProvider
+import pytest
+from lsprotocol.types import Position
+
 from vasp_lsp.features.completion import CompletionProvider
+from vasp_lsp.features.diagnostics import DiagnosticsProvider
 from vasp_lsp.features.hover import HoverProvider
-from lsprotocol.types import Position, CompletionParams, HoverParams
+from vasp_lsp.parsers.incar_parser import INCARParser
+from vasp_lsp.parsers.kpoints_parser import KPOINTSMode, KPOINTSParser
+from vasp_lsp.parsers.poscar_parser import POSCARParser
+from vasp_lsp.schemas.incar_tags import INCARTag, search_tags
 
 
 class TestKPOINTSParserCoverage:
@@ -30,7 +29,7 @@ a
 """
         parser = KPOINTSParser(content)
         data = parser.parse()
-        
+
         assert data is not None
         assert data.mode == KPOINTSMode.AUTOMATIC
         assert data.grid == [4, 4, 4]
@@ -44,7 +43,7 @@ automatic
 """
         parser = KPOINTSParser(content)
         data = parser.parse()
-        
+
         assert data is not None
         assert data.mode == KPOINTSMode.AUTOMATIC
         assert data.grid == [4, 4, 4]
@@ -58,7 +57,7 @@ a
 """
         parser = KPOINTSParser(content)
         data = parser.parse()
-        
+
         assert data is None
         assert len(parser.get_errors()) > 0
 
@@ -70,7 +69,7 @@ a b c
 """
         parser = KPOINTSParser(content)
         data = parser.parse()
-        
+
         assert data is None
         assert len(parser.get_errors()) > 0
 
@@ -83,7 +82,7 @@ Gamma
 """
         parser = KPOINTSParser(content)
         data = parser.parse()
-        
+
         assert data is None
         assert len(parser.get_errors()) > 0
 
@@ -96,7 +95,7 @@ a b c
 """
         parser = KPOINTSParser(content)
         data = parser.parse()
-        
+
         assert data is None
         assert len(parser.get_errors()) > 0
 
@@ -109,7 +108,7 @@ Monkhorst
 """
         parser = KPOINTSParser(content)
         data = parser.parse()
-        
+
         assert data is None
         assert len(parser.get_errors()) > 0
 
@@ -123,7 +122,7 @@ Reciprocal
 """
         parser = KPOINTSParser(content)
         data = parser.parse()
-        
+
         assert data is None
         assert len(parser.get_errors()) > 0
 
@@ -137,7 +136,7 @@ Reciprocal
 """
         parser = KPOINTSParser(content)
         data = parser.parse()
-        
+
         assert data is None
         assert len(parser.get_errors()) > 0
 
@@ -151,7 +150,7 @@ Reciprocal
 """
         parser = KPOINTSParser(content)
         data = parser.parse()
-        
+
         assert data is None
         assert len(parser.get_errors()) > 0
 
@@ -165,7 +164,7 @@ Cartesian
 """
         parser = KPOINTSParser(content)
         data = parser.parse()
-        
+
         assert data is not None
         assert data.mode == KPOINTSMode.EXPLICIT
         assert len(data.kpoints) == 2
@@ -180,7 +179,7 @@ K
 """
         parser = KPOINTSParser(content)
         data = parser.parse()
-        
+
         assert data is not None
         assert data.mode == KPOINTSMode.EXPLICIT
 
@@ -197,7 +196,7 @@ Reciprocal
 """
         parser = KPOINTSParser(content)
         data = parser.parse()
-        
+
         # Line mode parsing may have issues, check error handling
         if data is None:
             assert len(parser.get_errors()) > 0
@@ -215,7 +214,7 @@ abc def ghi
 """
         parser = KPOINTSParser(content)
         data = parser.parse()
-        
+
         # Should handle gracefully - either return data with no kpoints or error
         # The error handling is in the except block
         assert data is not None or len(parser.get_errors()) > 0
@@ -229,7 +228,7 @@ UnknownType
 """
         parser = KPOINTSParser(content)
         data = parser.parse()
-        
+
         assert data is None
         assert len(parser.get_errors()) > 0
 
@@ -240,7 +239,7 @@ UnknownType
 """
         parser = KPOINTSParser(content)
         data = parser.parse()
-        
+
         assert data is None
         assert len(parser.get_errors()) > 0
 
@@ -266,7 +265,7 @@ Direct
 """
         parser = POSCARParser(content)
         data = parser.parse()
-        
+
         assert data is not None
         # VASP 4 format doesn't have atom types
         assert len(data.atom_counts) == 2
@@ -285,7 +284,7 @@ Direct
 """
         parser = POSCARParser(content)
         data = parser.parse()
-        
+
         assert data is None
         assert len(parser.get_errors()) > 0
 
@@ -303,7 +302,7 @@ Direct
 """
         parser = POSCARParser(content)
         data = parser.parse()
-        
+
         assert data is None
         assert len(parser.get_errors()) > 0
 
@@ -328,10 +327,10 @@ LDAUU = 3.5 4.2
 """
         parser = INCARParser(content)
         params = parser.parse()
-        
+
         assert params is not None
-        assert 'MAGMOM' in params
-        assert 'LDAUU' in params
+        assert "MAGMOM" in params
+        assert "LDAUU" in params
 
 
 class TestINCARTagsCoverage:
@@ -345,7 +344,7 @@ class TestINCARTagsCoverage:
             default=1.0,
             description="Test description",
             category="test",
-            valid_range=(0.0, 10.0)
+            valid_range=(0.0, 10.0),
         )
         md = tag.to_markdown()
         assert "**Range:**" in md
@@ -359,7 +358,7 @@ class TestINCARTagsCoverage:
             default="A",
             description="Test description",
             category="test",
-            enum_values=["A", "B", "C"]
+            enum_values=["A", "B", "C"],
         )
         md = tag.to_markdown()
         assert "**Allowed values:**" in md
@@ -373,7 +372,7 @@ class TestINCARTagsCoverage:
             default=".TRUE.",
             description="Test description",
             category="test",
-            requires=["OTHER_TAG"]
+            requires=["OTHER_TAG"],
         )
         md = tag.to_markdown()
         assert "**Related tags:**" in md
@@ -387,7 +386,7 @@ class TestINCARTagsCoverage:
             default=".FALSE.",
             description="Test description",
             category="test",
-            conflicts_with=["CONFLICT_TAG"]
+            conflicts_with=["CONFLICT_TAG"],
         )
         md = tag.to_markdown()
         assert "**Conflicts with:**" in md
@@ -465,31 +464,31 @@ class TestCompletionCoverage:
         """Test file type detection with INCAR. - covers line 52."""
         provider = CompletionProvider()
         file_type = provider._get_file_type("file:///path/INCAR.")
-        assert file_type == 'INCAR'
+        assert file_type == "INCAR"
 
     def test_get_file_type_incar_vasp(self):
         """Test file type detection with INCAR.VASP - covers line 54."""
         provider = CompletionProvider()
         file_type = provider._get_file_type("file:///path/INCAR.VASP")
-        assert file_type == 'INCAR'
+        assert file_type == "INCAR"
 
     def test_get_file_type_poscar_dot(self):
         """Test file type detection with POSCAR. - covers line 81."""
         provider = CompletionProvider()
         file_type = provider._get_file_type("file:///path/POSCAR.")
-        assert file_type == 'POSCAR'
+        assert file_type == "POSCAR"
 
     def test_get_file_type_contcar_dot(self):
         """Test file type detection with CONTCAR. - covers line 83."""
         provider = CompletionProvider()
         file_type = provider._get_file_type("file:///path/CONTCAR.")
-        assert file_type == 'CONTCAR' or file_type == 'POSCAR'
+        assert file_type == "CONTCAR" or file_type == "POSCAR"
 
     def test_get_file_type_kpoints_dot(self):
         """Test file type detection with KPOINTS. - covers line 85."""
         provider = CompletionProvider()
         file_type = provider._get_file_type("file:///path/KPOINTS.")
-        assert file_type == 'KPOINTS'
+        assert file_type == "KPOINTS"
 
 
 class TestHoverCoverage:
@@ -499,13 +498,13 @@ class TestHoverCoverage:
         """Test file type detection with path - covers line 76."""
         provider = HoverProvider()
         file_type = provider._get_file_type("file:///some/path/to/INCAR")
-        assert file_type == 'INCAR'
+        assert file_type == "INCAR"
 
     def test_get_file_type_poscar_with_path(self):
         """Test file type detection - covers line 83."""
         provider = HoverProvider()
         file_type = provider._get_file_type("file:///path/POSCAR")
-        assert file_type == 'POSCAR'
+        assert file_type == "POSCAR"
 
     def test_incar_hover_no_word(self):
         """Test hover with no word at position - covers line 135."""
@@ -546,25 +545,28 @@ class TestServerCoverage:
     def test_main_tcp_mode(self):
         """Test main() with TCP mode - covers lines 151-186."""
         from vasp_lsp.server import main, server
-        
+
         # Mock the server.start_tcp method
-        with patch.object(server, 'start_tcp') as mock_tcp:
-            with patch('sys.argv', ['vasp-lsp', '--tcp', '--host', 'localhost', '--port', '9999']):
+        with patch.object(server, "start_tcp") as mock_tcp:
+            with patch(
+                "sys.argv",
+                ["vasp-lsp", "--tcp", "--host", "localhost", "--port", "9999"],
+            ):
                 # main() will try to start the server
                 try:
                     main()
                 except SystemExit:
                     pass
                 # Verify start_tcp was called with correct args
-                mock_tcp.assert_called_once_with('localhost', 9999)
+                mock_tcp.assert_called_once_with("localhost", 9999)
 
     def test_main_stdio_mode(self):
         """Test main() with stdio mode - covers lines 187-190."""
         from vasp_lsp.server import main, server
-        
+
         # Mock the server.start_io method
-        with patch.object(server, 'start_io') as mock_io:
-            with patch('sys.argv', ['vasp-lsp', '--stdio']):
+        with patch.object(server, "start_io") as mock_io:
+            with patch("sys.argv", ["vasp-lsp", "--stdio"]):
                 try:
                     main()
                 except SystemExit:
@@ -575,10 +577,10 @@ class TestServerCoverage:
     def test_main_default_mode(self):
         """Test main() with default (stdio) mode."""
         from vasp_lsp.server import main, server
-        
+
         # Mock the server.start_io method
-        with patch.object(server, 'start_io') as mock_io:
-            with patch('sys.argv', ['vasp-lsp']):
+        with patch.object(server, "start_io") as mock_io:
+            with patch("sys.argv", ["vasp-lsp"]):
                 try:
                     main()
                 except SystemExit:
@@ -589,7 +591,7 @@ class TestServerCoverage:
     def test_main_version_flag(self):
         """Test main() with --version flag."""
         from vasp_lsp.server import main
-        
-        with patch('sys.argv', ['vasp-lsp', '--version']):
+
+        with patch("sys.argv", ["vasp-lsp", "--version"]):
             with pytest.raises(SystemExit):
                 main()

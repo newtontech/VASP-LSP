@@ -2,8 +2,7 @@
 Final tests for remaining missing coverage lines.
 """
 
-import pytest
-from vasp_lsp.parsers.kpoints_parser import KPOINTSParser, KPOINTSMode
+from vasp_lsp.parsers.kpoints_parser import KPOINTSParser
 
 
 class TestFinalMissingCoverage:
@@ -19,8 +18,8 @@ Reciprocal
 0.5 0.0 0.0 1.0"""
         parser = KPOINTSParser(content)
         data = parser.parse()
-        
+
         assert data is None
         errors = parser.get_errors()
         assert len(errors) > 0
-        assert "Expected 3 k-points, found 2" in errors[0]['message']
+        assert "Expected 3 k-points, found 2" in errors[0]["message"]

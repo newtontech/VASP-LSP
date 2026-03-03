@@ -2,10 +2,11 @@
 Integration tests to trigger coverage through public API.
 """
 
+from lsprotocol.types import CompletionParams, HoverParams, Position
+
 from vasp_lsp.features.completion import CompletionProvider
-from vasp_lsp.features.hover import HoverProvider
 from vasp_lsp.features.diagnostics import DiagnosticsProvider
-from lsprotocol.types import Position, CompletionParams, HoverParams
+from vasp_lsp.features.hover import HoverProvider
 
 
 class TestCompletionIntegration:
@@ -17,7 +18,7 @@ class TestCompletionIntegration:
         content = "ENC"
         params = CompletionParams(
             text_document={"uri": "file:///INCAR"},
-            position=Position(line=0, character=3)
+            position=Position(line=0, character=3),
         )
         result = provider.get_completions(params, content, "file:///INCAR")
         assert result is not None
@@ -28,7 +29,7 @@ class TestCompletionIntegration:
         content = "E"
         params = CompletionParams(
             text_document={"uri": "file:///INCAR."},
-            position=Position(line=0, character=1)
+            position=Position(line=0, character=1),
         )
         result = provider.get_completions(params, content, "file:///INCAR.")
         assert result is not None
@@ -39,7 +40,7 @@ class TestCompletionIntegration:
         content = "E"
         params = CompletionParams(
             text_document={"uri": "file:///INCAR.VASP"},
-            position=Position(line=0, character=1)
+            position=Position(line=0, character=1),
         )
         result = provider.get_completions(params, content, "file:///INCAR.VASP")
         assert result is not None
@@ -50,7 +51,7 @@ class TestCompletionIntegration:
         content = ""
         params = CompletionParams(
             text_document={"uri": "file:///POSCAR"},
-            position=Position(line=0, character=0)
+            position=Position(line=0, character=0),
         )
         result = provider.get_completions(params, content, "file:///POSCAR")
         assert result is not None
@@ -61,7 +62,7 @@ class TestCompletionIntegration:
         content = ""
         params = CompletionParams(
             text_document={"uri": "file:///CONTCAR"},
-            position=Position(line=0, character=0)
+            position=Position(line=0, character=0),
         )
         result = provider.get_completions(params, content, "file:///CONTCAR")
         assert result is not None
@@ -72,7 +73,7 @@ class TestCompletionIntegration:
         content = ""
         params = CompletionParams(
             text_document={"uri": "file:///KPOINTS"},
-            position=Position(line=0, character=0)
+            position=Position(line=0, character=0),
         )
         result = provider.get_completions(params, content, "file:///KPOINTS")
         assert result is not None
@@ -83,7 +84,7 @@ class TestCompletionIntegration:
         content = ""
         params = CompletionParams(
             text_document={"uri": "file:///KPOINTS."},
-            position=Position(line=0, character=0)
+            position=Position(line=0, character=0),
         )
         result = provider.get_completions(params, content, "file:///KPOINTS.")
         assert result is not None
@@ -94,7 +95,7 @@ class TestCompletionIntegration:
         content = ""
         params = CompletionParams(
             text_document={"uri": "file:///KPOINTS.VASP"},
-            position=Position(line=0, character=0)
+            position=Position(line=0, character=0),
         )
         result = provider.get_completions(params, content, "file:///KPOINTS.VASP")
         assert result is not None
@@ -109,7 +110,7 @@ class TestHoverIntegration:
         content = "ENCUT = 500"
         params = HoverParams(
             text_document={"uri": "file:///INCAR"},
-            position=Position(line=0, character=2)
+            position=Position(line=0, character=2),
         )
         result = provider.get_hover(params, content, "file:///INCAR")
         assert result is not None
@@ -120,7 +121,7 @@ class TestHoverIntegration:
         content = "System comment"
         params = HoverParams(
             text_document={"uri": "file:///POSCAR"},
-            position=Position(line=0, character=0)
+            position=Position(line=0, character=0),
         )
         result = provider.get_hover(params, content, "file:///POSCAR")
         assert result is not None
@@ -131,7 +132,7 @@ class TestHoverIntegration:
         content = "Gamma\n4 4 4\n"
         params = HoverParams(
             text_document={"uri": "file:///KPOINTS"},
-            position=Position(line=0, character=0)
+            position=Position(line=0, character=0),
         )
         result = provider.get_hover(params, content, "file:///KPOINTS")
         assert result is not None

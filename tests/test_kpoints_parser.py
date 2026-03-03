@@ -2,8 +2,7 @@
 Tests for KPOINTS parser.
 """
 
-import pytest
-from vasp_lsp.parsers.kpoints_parser import KPOINTSParser, KPOINTSData, KPOINTSMode
+from vasp_lsp.parsers.kpoints_parser import KPOINTSMode, KPOINTSParser
 
 
 class TestKPOINTSParser:
@@ -19,7 +18,7 @@ Automatic
 """
         parser = KPOINTSParser(content)
         data = parser.parse()
-        
+
         # If automatic mode not fully supported, check error handling
         if data is None:
             assert len(parser.get_errors()) > 0
@@ -38,7 +37,7 @@ Automatic
 """
         parser = KPOINTSParser(content)
         data = parser.parse()
-        
+
         if data is None:
             assert len(parser.get_errors()) > 0
         else:
@@ -55,7 +54,7 @@ Gamma
 """
         parser = KPOINTSParser(content)
         data = parser.parse()
-        
+
         assert data is not None
         assert data.mode == KPOINTSMode.GAMMA_MONKHORST
         assert data.grid == [4, 4, 4]
@@ -70,7 +69,7 @@ Monkhorst
 """
         parser = KPOINTSParser(content)
         data = parser.parse()
-        
+
         assert data is not None
         assert data.mode == KPOINTSMode.GAMMA_MONKHORST
         assert data.grid == [4, 4, 4]
@@ -87,7 +86,7 @@ Reciprocal
 """
         parser = KPOINTSParser(content)
         data = parser.parse()
-        
+
         assert data is not None
         assert data.mode == KPOINTSMode.EXPLICIT
         assert len(data.kpoints) == 4
@@ -108,7 +107,7 @@ Reciprocal
 """
         parser = KPOINTSParser(content)
         data = parser.parse()
-        
+
         # Line mode parsing may have issues, check error handling
         if data is None:
             assert len(parser.get_errors()) > 0
@@ -121,7 +120,7 @@ Reciprocal
         content = "Too short"
         parser = KPOINTSParser(content)
         data = parser.parse()
-        
+
         assert data is None
         assert len(parser.get_errors()) > 0
 
@@ -132,7 +131,7 @@ invalid_spec
 """
         parser = KPOINTSParser(content)
         data = parser.parse()
-        
+
         assert data is None
         assert len(parser.get_errors()) > 0
 
@@ -145,7 +144,7 @@ Automatic
 """
         parser = KPOINTSParser(content)
         data = parser.parse()
-        
+
         assert data is None
         assert len(parser.get_errors()) > 0
 
@@ -159,7 +158,7 @@ Reciprocal
 """
         parser = KPOINTSParser(content)
         data = parser.parse()
-        
+
         assert data is None
         assert len(parser.get_errors()) > 0
 
@@ -173,7 +172,7 @@ Reciprocal
 """
         parser = KPOINTSParser(content)
         data = parser.parse()
-        
+
         assert data is None
         assert len(parser.get_errors()) > 0
 
@@ -182,6 +181,6 @@ Reciprocal
         content = "Invalid"
         parser = KPOINTSParser(content)
         parser.parse()
-        
+
         errors = parser.get_errors()
         assert isinstance(errors, list)

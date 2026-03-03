@@ -2,8 +2,7 @@
 Tests for explicit mode and line mode edge cases.
 """
 
-import pytest
-from vasp_lsp.parsers.kpoints_parser import KPOINTSParser, KPOINTSMode
+from vasp_lsp.parsers.kpoints_parser import KPOINTSMode, KPOINTSParser
 
 
 class TestExplicitModeEdgeCases:
@@ -19,11 +18,11 @@ Reciprocal
 """
         parser = KPOINTSParser(content)
         data = parser.parse()
-        
+
         assert data is None
         errors = parser.get_errors()
         assert len(errors) > 0
-        assert "Error parsing explicit k-points" in errors[0]['message']
+        assert "Error parsing explicit k-points" in errors[0]["message"]
 
     def test_explicit_mode_missing_kpoints_in_loop(self):
         """Test explicit mode with fewer k-points than declared."""
@@ -36,13 +35,15 @@ Reciprocal
 """
         parser = KPOINTSParser(content)
         data = parser.parse()
-        
+
         # Should return None due to missing k-points
         if data is None:
             errors = parser.get_errors()
             assert len(errors) > 0
             # The error could be about k-point line format or missing k-points
-            assert "K-point" in errors[0]['message'] or "Expected" in errors[0]['message']
+            assert (
+                "K-point" in errors[0]["message"] or "Expected" in errors[0]["message"]
+            )
         else:
             # Or might parse what's available
             assert len(data.kpoints) <= 5
@@ -62,7 +63,7 @@ Reciprocal
 """
         parser = KPOINTSParser(content)
         data = parser.parse()
-        
+
         # Should use default line_density = 20
         if data is not None:
             assert data.mode == KPOINTSMode.LINE_MODE
@@ -75,13 +76,13 @@ Reciprocal
         """Test line mode with whitespace-only points line."""
         content = """Test
 Line
-   
+
 Reciprocal
 0.0 0.0 0.0
 """
         parser = KPOINTSParser(content)
         data = parser.parse()
-        
+
         # Should use default line_density = 20
         if data is not None:
             assert data.mode == KPOINTSMode.LINE_MODE
@@ -102,7 +103,7 @@ Reciprocal
 """
         parser = KPOINTSParser(content)
         data = parser.parse()
-        
+
         # Line mode should parse successfully
         assert data is not None
         assert data.mode == KPOINTSMode.LINE_MODE
@@ -123,7 +124,7 @@ Reciprocal
 """
         parser = KPOINTSParser(content)
         data = parser.parse()
-        
+
         # Line mode should parse successfully
         assert data is not None
         assert data.mode == KPOINTSMode.LINE_MODE
@@ -140,7 +141,7 @@ Reciprocal
 """
         parser = KPOINTSParser(content)
         data = parser.parse()
-        
+
         # Should skip the line with fewer than 3 values
         assert data is not None
         assert data.mode == KPOINTSMode.LINE_MODE
@@ -156,6 +157,6 @@ Reciprocal
 """
         parser = KPOINTSParser(content)
         data = parser.parse()
-        
+
         # Should handle ValueError gracefully
         assert data is None or len(parser.get_errors()) >= 0

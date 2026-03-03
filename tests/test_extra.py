@@ -3,13 +3,12 @@ Additional tests to improve coverage.
 Focus on uncovered lines in server.py and feature files.
 """
 
-import pytest
-from unittest.mock import Mock, MagicMock
+from unittest.mock import Mock
 
-from vasp_lsp.server import server
 from vasp_lsp.features.completion import CompletionProvider
-from vasp_lsp.features.hover import HoverProvider
 from vasp_lsp.features.diagnostics import DiagnosticsProvider
+from vasp_lsp.features.hover import HoverProvider
+from vasp_lsp.server import server
 
 
 class TestServerHandlersCoverage:
@@ -23,6 +22,7 @@ class TestServerHandlersCoverage:
 
         # Call initialize
         from vasp_lsp.server import initialize
+
         result = initialize(params)
 
         assert result is not None
@@ -33,6 +33,7 @@ class TestServerHandlersCoverage:
         params.client_info = None
 
         from vasp_lsp.server import initialize
+
         result = initialize(params)
 
         assert result is not None
@@ -45,6 +46,7 @@ class TestServerHandlersCoverage:
         params.text_document.text = "ENCUT = 520"
 
         from vasp_lsp.server import text_document_did_open
+
         text_document_did_open(params)
 
         # Verify content was cached
@@ -58,9 +60,13 @@ class TestServerHandlersCoverage:
         params.text_document.text = "Test\n1.0\n1.0 0.0 0.0"
 
         from vasp_lsp.server import text_document_did_open
+
         text_document_did_open(params)
 
-        assert server.get_document_content("file:///test/POSCAR") == "Test\n1.0\n1.0 0.0 0.0"
+        assert (
+            server.get_document_content("file:///test/POSCAR")
+            == "Test\n1.0\n1.0 0.0 0.0"
+        )
 
     def test_text_document_did_open_kpoints(self):
         """Test document open handler for KPOINTS."""
@@ -70,9 +76,13 @@ class TestServerHandlersCoverage:
         params.text_document.text = "Automatic\n0\nGamma\n4 4 4"
 
         from vasp_lsp.server import text_document_did_open
+
         text_document_did_open(params)
 
-        assert server.get_document_content("file:///test/KPOINTS") == "Automatic\n0\nGamma\n4 4 4"
+        assert (
+            server.get_document_content("file:///test/KPOINTS")
+            == "Automatic\n0\nGamma\n4 4 4"
+        )
 
     def test_text_document_did_change(self):
         """Test document change handler."""
@@ -85,6 +95,7 @@ class TestServerHandlersCoverage:
         params.content_changes = [Mock(text="ENCUT = 520")]
 
         from vasp_lsp.server import text_document_did_change
+
         text_document_did_change(params)
 
         assert server.get_document_content("file:///test/INCAR") == "ENCUT = 520"
@@ -99,6 +110,7 @@ class TestServerHandlersCoverage:
         params.content_changes = []
 
         from vasp_lsp.server import text_document_did_change
+
         text_document_did_change(params)
 
         # Should not crash
@@ -112,6 +124,7 @@ class TestServerHandlersCoverage:
         params.text_document.uri = "file:///test/INCAR"
 
         from vasp_lsp.server import text_document_did_save
+
         text_document_did_save(params)
 
         # Should not crash
@@ -128,6 +141,7 @@ class TestServerHandlersCoverage:
         params.position.character = 3
 
         from vasp_lsp.server import completions
+
         result = completions(params)
 
         assert result is not None
@@ -140,6 +154,7 @@ class TestServerHandlersCoverage:
         params.position = Mock()
 
         from vasp_lsp.server import completions
+
         result = completions(params)
 
         assert result is None
@@ -156,10 +171,11 @@ class TestServerHandlersCoverage:
         params.position.character = 2
 
         from vasp_lsp.server import hover
+
         result = hover(params)
 
         # May return None or hover info
-        assert result is None or hasattr(result, 'contents')
+        assert result is None or hasattr(result, "contents")
 
     def test_hover_no_document(self):
         """Test hover with no document."""
@@ -169,6 +185,7 @@ class TestServerHandlersCoverage:
         params.position = Mock()
 
         from vasp_lsp.server import hover
+
         result = hover(params)
 
         assert result is None
@@ -320,7 +337,7 @@ class TestHoverProviderCoverage:
         hover = provider.get_hover(params, content, "file:///test/INCAR")
 
         # May return None or hover info
-        assert hover is None or hasattr(hover, 'contents')
+        assert hover is None or hasattr(hover, "contents")
 
     def test_get_hover_incar_value(self):
         """Test hover on INCAR value."""
@@ -336,7 +353,7 @@ class TestHoverProviderCoverage:
         content = "ENCUT = 520"
         hover = provider.get_hover(params, content, "file:///test/INCAR")
 
-        assert hover is None or hasattr(hover, 'contents')
+        assert hover is None or hasattr(hover, "contents")
 
     def test_get_hover_poscar(self):
         """Test hover on POSCAR file."""
@@ -352,7 +369,7 @@ class TestHoverProviderCoverage:
         content = "Test system"
         hover = provider.get_hover(params, content, "file:///test/POSCAR")
 
-        assert hover is None or hasattr(hover, 'contents')
+        assert hover is None or hasattr(hover, "contents")
 
     def test_get_hover_kpoints(self):
         """Test hover on KPOINTS file."""
@@ -368,7 +385,7 @@ class TestHoverProviderCoverage:
         content = "Automatic"
         hover = provider.get_hover(params, content, "file:///test/KPOINTS")
 
-        assert hover is None or hasattr(hover, 'contents')
+        assert hover is None or hasattr(hover, "contents")
 
     def test_get_hover_non_vasp(self):
         """Test hover on non-VASP file."""
@@ -442,7 +459,9 @@ class TestDiagnosticsProviderCoverage:
         diagnostics = provider.get_diagnostics(content, "file:///test/INCAR")
 
         assert isinstance(diagnostics, list)
-        conflict_warnings = [d for d in diagnostics if 'NPAR' in d.message or 'NCORE' in d.message]
+        conflict_warnings = [
+            d for d in diagnostics if "NPAR" in d.message or "NCORE" in d.message
+        ]
         assert len(conflict_warnings) > 0
 
     def test_diagnostics_ldau_missing_params(self):
@@ -469,7 +488,7 @@ class TestDiagnosticsProviderCoverage:
         diagnostics = provider.get_diagnostics(content, "file:///test/INCAR")
 
         assert isinstance(diagnostics, list)
-        magmom_warnings = [d for d in diagnostics if 'MAGMOM' in d.message]
+        magmom_warnings = [d for d in diagnostics if "MAGMOM" in d.message]
         assert len(magmom_warnings) > 0
 
     def test_diagnostics_ismear_sigma_warning(self):
@@ -480,7 +499,7 @@ class TestDiagnosticsProviderCoverage:
         diagnostics = provider.get_diagnostics(content, "file:///test/INCAR")
 
         assert isinstance(diagnostics, list)
-        sigma_warnings = [d for d in diagnostics if 'SIGMA' in d.message]
+        sigma_warnings = [d for d in diagnostics if "SIGMA" in d.message]
         assert len(sigma_warnings) > 0
 
     def test_diagnostics_poscar_valid(self):

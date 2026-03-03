@@ -1,7 +1,6 @@
 """Final tests to achieve 100% coverage."""
 
-import pytest
-from lsprotocol.types import Diagnostic, Range, Position
+from lsprotocol.types import Diagnostic, Position, Range
 
 from vasp_lsp.features.formatting import FormattingProvider
 from vasp_lsp.features.quickfixes import QuickFixesProvider
@@ -70,17 +69,27 @@ class TestQuickFixesCoverage:
     def test_ldau_parameter_fixes(self):
         """Test LDAU parameter quick fixes."""
         provider = QuickFixesProvider()
-        
+
         # Test LDAUTYPE fix
         content = "LDAU = .TRUE."
         diagnostics = [
             Diagnostic(
-                range=Range(start=Position(line=0, character=0), end=Position(line=0, character=14)),
-                message="Missing LDAUTYPE when LDAU is enabled"
+                range=Range(
+                    start=Position(line=0, character=0),
+                    end=Position(line=0, character=14),
+                ),
+                message="Missing LDAUTYPE when LDAU is enabled",
             )
         ]
-        actions = provider.get_code_actions(content, "file://INCAR", diagnostics, Range(start=Position(line=0, character=0), end=Position(line=0, character=14)))
-        
+        actions = provider.get_code_actions(
+            content,
+            "file://INCAR",
+            diagnostics,
+            Range(
+                start=Position(line=0, character=0), end=Position(line=0, character=14)
+            ),
+        )
+
         # Should have LDAUTYPE fix
         ldautype_actions = [a for a in actions if "LDAUTYPE" in a.title]
         assert len(ldautype_actions) > 0
@@ -88,33 +97,53 @@ class TestQuickFixesCoverage:
     def test_ldauj_parameter_fix(self):
         """Test LDAUJ parameter quick fix."""
         provider = QuickFixesProvider()
-        
+
         content = "LDAU = .TRUE.\nLDAUTYPE = 2"
         diagnostics = [
             Diagnostic(
-                range=Range(start=Position(line=0, character=0), end=Position(line=0, character=14)),
-                message="Missing LDAUJ when LDAU is enabled"
+                range=Range(
+                    start=Position(line=0, character=0),
+                    end=Position(line=0, character=14),
+                ),
+                message="Missing LDAUJ when LDAU is enabled",
             )
         ]
-        actions = provider.get_code_actions(content, "file://INCAR", diagnostics, Range(start=Position(line=0, character=0), end=Position(line=0, character=14)))
-        
+        actions = provider.get_code_actions(
+            content,
+            "file://INCAR",
+            diagnostics,
+            Range(
+                start=Position(line=0, character=0), end=Position(line=0, character=14)
+            ),
+        )
+
         # Check for any LDAU-related fixes
         assert isinstance(actions, list)
 
     def test_fix_typo_start_col_not_found(self):
         """Test _create_fix_typo_action when start_col is -1."""
         provider = QuickFixesProvider()
-        
+
         # Create a diagnostic with a tag name that doesn't exist in the line
         content = "SOME_OTHER_TAG = 1"
         diagnostics = [
             Diagnostic(
-                range=Range(start=Position(line=0, character=0), end=Position(line=0, character=18)),
-                message="Unknown INCAR tag: ENCO"
+                range=Range(
+                    start=Position(line=0, character=0),
+                    end=Position(line=0, character=18),
+                ),
+                message="Unknown INCAR tag: ENCO",
             )
         ]
-        actions = provider.get_code_actions(content, "file://INCAR", diagnostics, Range(start=Position(line=0, character=0), end=Position(line=0, character=18)))
-        
+        actions = provider.get_code_actions(
+            content,
+            "file://INCAR",
+            diagnostics,
+            Range(
+                start=Position(line=0, character=0), end=Position(line=0, character=18)
+            ),
+        )
+
         # When start_col is -1, should return None for that action
         # So we might not get any typo fix actions
         assert isinstance(actions, list)
@@ -122,16 +151,26 @@ class TestQuickFixesCoverage:
     def test_unknown_tag_typo_fix(self):
         """Test unknown tag typo fix with similar tag."""
         provider = QuickFixesProvider()
-        
+
         content = "ENCO = 500"
         diagnostics = [
             Diagnostic(
-                range=Range(start=Position(line=0, character=0), end=Position(line=0, character=10)),
-                message="Unknown INCAR tag: ENCO"
+                range=Range(
+                    start=Position(line=0, character=0),
+                    end=Position(line=0, character=10),
+                ),
+                message="Unknown INCAR tag: ENCO",
             )
         ]
-        actions = provider.get_code_actions(content, "file://INCAR", diagnostics, Range(start=Position(line=0, character=0), end=Position(line=0, character=10)))
-        
+        actions = provider.get_code_actions(
+            content,
+            "file://INCAR",
+            diagnostics,
+            Range(
+                start=Position(line=0, character=0), end=Position(line=0, character=10)
+            ),
+        )
+
         # Should suggest ENCUT as fix
         typo_fixes = [a for a in actions if "ENCUT" in a.title or "ENCO" in a.title]
         assert len(typo_fixes) > 0
@@ -139,32 +178,52 @@ class TestQuickFixesCoverage:
     def test_ldaul_parameter_fix(self):
         """Test LDAUL parameter quick fix."""
         provider = QuickFixesProvider()
-        
+
         content = "LDAU = .TRUE.\nLDAUTYPE = 2"
         diagnostics = [
             Diagnostic(
-                range=Range(start=Position(line=0, character=0), end=Position(line=0, character=14)),
-                message="Missing LDAUL when LDAU is enabled"
+                range=Range(
+                    start=Position(line=0, character=0),
+                    end=Position(line=0, character=14),
+                ),
+                message="Missing LDAUL when LDAU is enabled",
             )
         ]
-        actions = provider.get_code_actions(content, "file://INCAR", diagnostics, Range(start=Position(line=0, character=0), end=Position(line=0, character=14)))
-        
+        actions = provider.get_code_actions(
+            content,
+            "file://INCAR",
+            diagnostics,
+            Range(
+                start=Position(line=0, character=0), end=Position(line=0, character=14)
+            ),
+        )
+
         ldaul_actions = [a for a in actions if "LDAUL" in a.title]
         assert len(ldaul_actions) > 0
 
     def test_ldauu_parameter_fix(self):
         """Test LDAUU parameter quick fix."""
         provider = QuickFixesProvider()
-        
+
         content = "LDAU = .TRUE.\nLDAUTYPE = 2"
         diagnostics = [
             Diagnostic(
-                range=Range(start=Position(line=0, character=0), end=Position(line=0, character=14)),
-                message="Missing LDAUU when LDAU is enabled"
+                range=Range(
+                    start=Position(line=0, character=0),
+                    end=Position(line=0, character=14),
+                ),
+                message="Missing LDAUU when LDAU is enabled",
             )
         ]
-        actions = provider.get_code_actions(content, "file://INCAR", diagnostics, Range(start=Position(line=0, character=0), end=Position(line=0, character=14)))
-        
+        actions = provider.get_code_actions(
+            content,
+            "file://INCAR",
+            diagnostics,
+            Range(
+                start=Position(line=0, character=0), end=Position(line=0, character=14)
+            ),
+        )
+
         ldauu_actions = [a for a in actions if "LDAUU" in a.title]
         assert len(ldauu_actions) > 0
 
@@ -256,12 +315,13 @@ Direct
     def test_similarity_score_edge_cases(self):
         """Test _similarity_score edge cases."""
         from vasp_lsp.features.quickfixes import QuickFixesProvider
+
         provider = QuickFixesProvider()
-        
+
         # Test with one empty string
         score = provider._similarity_score("ABC", "")
         assert score == 0.0
-        
+
         # Test with empty first string
         score = provider._similarity_score("", "ABC")
         assert score == 0.0

@@ -15,10 +15,7 @@ class HoverProvider:
         pass
 
     def get_hover(
-        self,
-        params: HoverParams,
-        document_content: str,
-        document_uri: str
+        self, params: HoverParams, document_content: str, document_uri: str
     ) -> Optional[Hover]:
         """Get hover documentation for the current cursor position.
 
@@ -33,11 +30,11 @@ class HoverProvider:
         file_type = self._get_file_type(document_uri)
         position = params.position
 
-        if file_type == 'INCAR':
+        if file_type == "INCAR":
             return self._get_incar_hover(document_content, position)
-        elif file_type == 'POSCAR':
+        elif file_type == "POSCAR":
             return self._get_poscar_hover(document_content, position)
-        elif file_type == 'KPOINTS':
+        elif file_type == "KPOINTS":
             return self._get_kpoints_hover(document_content, position)
 
         return None
@@ -51,16 +48,16 @@ class HoverProvider:
         Returns:
             File type string.
         """
-        filename = uri.split('/')[-1].upper()
+        filename = uri.split("/")[-1].upper()
 
-        if 'INCAR' in filename:
-            return 'INCAR'
-        if 'POSCAR' in filename or 'CONTCAR' in filename:
-            return 'POSCAR'
-        if 'KPOINTS' in filename:
-            return 'KPOINTS'
+        if "INCAR" in filename:
+            return "INCAR"
+        if "POSCAR" in filename or "CONTCAR" in filename:
+            return "POSCAR"
+        if "KPOINTS" in filename:
+            return "KPOINTS"
 
-        return 'UNKNOWN'
+        return "UNKNOWN"
 
     def _get_incar_hover(self, content: str, position: Position) -> Optional[Hover]:
         """Get hover info for INCAR files.
@@ -72,7 +69,7 @@ class HoverProvider:
         Returns:
             Hover object if a tag is found under cursor.
         """
-        lines = content.split('\n')
+        lines = content.split("\n")
         if position.line >= len(lines):
             return None
 
@@ -88,8 +85,7 @@ class HoverProvider:
         if tag:
             return Hover(
                 contents=MarkupContent(
-                    kind=MarkupKind.Markdown,
-                    value=tag.to_markdown()
+                    kind=MarkupKind.Markdown, value=tag.to_markdown()
                 )
             )
 
@@ -106,30 +102,39 @@ class HoverProvider:
             Hover object with line-specific documentation.
         """
         line_docs = {
-            0: ("**System Comment**",
-                "A description of the system. This is written to output files."),
-            1: ("**Scale Factor**",
-                "Universal scaling factor for lattice vectors and coordinates. \"1.0\" for no scaling."),
-            2: ("**Lattice Vector 1**",
-                "First lattice vector in Å (scaled by scale factor)."),
-            3: ("**Lattice Vector 2**",
-                "Second lattice vector in Å (scaled by scale factor)."),
-            4: ("**Lattice Vector 3**",
-                "Third lattice vector in Å (scaled by scale factor)."),
-            5: ("**Atom Types**",
-                "Element symbols for each species (VASP 5 format)."),
-            6: ("**Atom Counts**",
-                "Number of atoms for each species."),
-            7: ("**Coordinate Type**",
-                "Direct (fractional) or Cartesian (in Å, scaled by scale factor)."),
+            0: (
+                "**System Comment**",
+                "A description of the system. This is written to output files.",
+            ),
+            1: (
+                "**Scale Factor**",
+                'Universal scaling factor for lattice vectors and coordinates. "1.0" for no scaling.',
+            ),
+            2: (
+                "**Lattice Vector 1**",
+                "First lattice vector in Å (scaled by scale factor).",
+            ),
+            3: (
+                "**Lattice Vector 2**",
+                "Second lattice vector in Å (scaled by scale factor).",
+            ),
+            4: (
+                "**Lattice Vector 3**",
+                "Third lattice vector in Å (scaled by scale factor).",
+            ),
+            5: ("**Atom Types**", "Element symbols for each species (VASP 5 format)."),
+            6: ("**Atom Counts**", "Number of atoms for each species."),
+            7: (
+                "**Coordinate Type**",
+                "Direct (fractional) or Cartesian (in Å, scaled by scale factor).",
+            ),
         }
 
         if position.line in line_docs:
             title, description = line_docs[position.line]
             return Hover(
                 contents=MarkupContent(
-                    kind=MarkupKind.Markdown,
-                    value=f"{title}\n\n{description}"
+                    kind=MarkupKind.Markdown, value=f"{title}\n\n{description}"
                 )
             )
 
@@ -146,20 +151,22 @@ class HoverProvider:
             Hover object with line-specific documentation.
         """
         line_docs = {
-            0: ("**Comment**",
-                "A comment describing the k-point set."),
-            1: ("**K-point Count/Mode**",
-                "Number of k-points (0 for automatic), or 'A' for fully automatic, or 'Line-mode'."),
-            2: ("**Generation Scheme**",
-                "Gamma-centered (G), Monkhorst-Pack (M), Cartesian (C/K), or Reciprocal (R)."),
+            0: ("**Comment**", "A comment describing the k-point set."),
+            1: (
+                "**K-point Count/Mode**",
+                "Number of k-points (0 for automatic), or 'A' for fully automatic, or 'Line-mode'.",
+            ),
+            2: (
+                "**Generation Scheme**",
+                "Gamma-centered (G), Monkhorst-Pack (M), Cartesian (C/K), or Reciprocal (R).",
+            ),
         }
 
         if position.line in line_docs:
             title, description = line_docs[position.line]
             return Hover(
                 contents=MarkupContent(
-                    kind=MarkupKind.Markdown,
-                    value=f"{title}\n\n{description}"
+                    kind=MarkupKind.Markdown, value=f"{title}\n\n{description}"
                 )
             )
 
@@ -183,11 +190,11 @@ class HoverProvider:
         end = column
 
         # Move left to find start
-        while start > 0 and (line[start - 1].isalnum() or line[start - 1] == '_'):
+        while start > 0 and (line[start - 1].isalnum() or line[start - 1] == "_"):
             start -= 1
 
         # Move right to find end
-        while end < len(line) and (line[end].isalnum() or line[end] == '_'):
+        while end < len(line) and (line[end].isalnum() or line[end] == "_"):
             end += 1
 
         return line[start:end].strip()
