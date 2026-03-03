@@ -21,48 +21,44 @@ This is the development plan for vasp-lsp - a Language Server Protocol implement
 - [x] Quick fixes
 
 ## Testing
-- Run tests: `pytest tests/`
-- Check coverage: `pytest --cov`
-- Current status: 390 tests, 100% coverage (2026-03-03)
+- Run tests: \`pytest tests/\`
+- Check coverage: \`pytest --cov\`
+- Current status: 416 tests, 100% coverage (2026-03-04)
 
-## Coverage Analysis (2026-03-03)
+## Coverage Analysis (2026-03-04)
 All modules at 100%:
-- `src/vasp_lsp/__init__.py`: 100%
-- `src/vasp_lsp/features/__init__.py`: 100%
-- `src/vasp_lsp/features/completion.py`: 100%
-- `src/vasp_lsp/features/diagnostics.py`: 100%
-- `src/vasp_lsp/features/formatting.py`: 100%
-- `src/vasp_lsp/features/hover.py`: 100%
-- `src/vasp_lsp/features/quickfixes.py`: 100%
-- `src/vasp_lsp/parsers/__init__.py`: 100%
-- `src/vasp_lsp/parsers/incar_parser.py`: 100%
-- `src/vasp_lsp/parsers/kpoints_parser.py`: 100%
-- `src/vasp_lsp/parsers/poscar_parser.py`: 100%
-- `src/vasp_lsp/schemas/__init__.py`: 100%
-- `src/vasp_lsp/schemas/incar_tags.py`: 100%
-- `src/vasp_lsp/server.py`: 100%
+- \`src/vasp_lsp/__init__.py\`: 100%
+- \`src/vasp_lsp/features/__init__.py\`: 100%
+- \`src/vasp_lsp/features/completion.py\`: 100%
+- \`src/vasp_lsp/features/diagnostics.py\`: 100%
+- \`src/vasp_lsp/features/formatting.py\`: 100%
+- \`src/vasp_lsp/features/hover.py\`: 100%
+- \`src/vasp_lsp/features/quickfixes.py\`: 100%
+- \`src/vasp_lsp/parsers/__init__.py\`: 100%
+- \`src/vasp_lsp/parsers/incar_parser.py\`: 100%
+- \`src/vasp_lsp/parsers/kpoints_parser.py\`: 100%
+- \`src/vasp_lsp/parsers/poscar_parser.py\`: 100%
+- \`src/vasp_lsp/schemas/__init__.py\`: 100%
+- \`src/vasp_lsp/schemas/incar_tags.py\`: 100%
+- \`src/vasp_lsp/server.py\`: 100%
 
 ## Maintenance
 - Nightly automated maintenance at random time
 - See .maintenance/last-run.md for last check
 
-## Recent Updates (2026-03-03)
-- ✅ Achieved 100% test coverage
-- ✅ Removed dead code and unreachable branches
-- ✅ 416 tests passing (26 new tests added)
-- ✅ All modules at 100% coverage
+## Recent Updates (2026-03-04)
+- ✅ Fixed all Ruff lint errors (W293, F841, F601)
+- ✅ 416 tests passing with 100% coverage maintained
+- ✅ All Ruff checks now pass
+- ✅ Updated pyproject.toml with proper lint configuration
 - ✅ All changes committed and pushed to GitHub
-- ✅ Code style improvements with Ruff linting
-- ⚠️ GitHub issues disabled, no PRs pending
 
-## Code Quality Improvements (2026-03-03)
-- Removed unreachable code in formatting.py (output_tags branch)
-- Removed dead code in quickfixes.py (max_len == 0 check)
-- Removed unreachable POSCAR formatting branch
-- Fixed 362+ code style issues with Ruff auto-fix
-- Removed unused imports and organized imports
-- Fixed trailing whitespace and blank line issues
-- Improved code maintainability and clarity
+## Code Quality Improvements (2026-03-04)
+- Fixed W293: Removed whitespace from blank lines in docstrings
+- Fixed F841: Removed unused variables in formatting.py and kpoints_parser.py
+- Fixed F601: Removed duplicate 'ENCUTT' key in quickfixes.py
+- Configured pyproject.toml to ignore E501 for long description strings
+- All code now passes Ruff linting with zero warnings
 
 ## Next Steps
 1. Create VSCode extension configuration
@@ -73,4 +69,5 @@ All modules at 100%:
 ## Version History
 - v0.1.0: Initial release with core features
 - v0.2.0: Added formatting support
-- v0.4.0: Achieved 100% test coverage, code cleanup (current)
+- v0.4.0: Achieved 100% test coverage, code cleanup
+- v0.4.1: Fixed all Ruff lint errors, improved code quality (current)
