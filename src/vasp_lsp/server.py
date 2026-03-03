@@ -9,34 +9,34 @@ import logging
 from typing import Optional
 
 from lsprotocol.types import (
+    TEXT_DOCUMENT_CODE_ACTION,
     TEXT_DOCUMENT_COMPLETION,
-    TEXT_DOCUMENT_HOVER,
-    TEXT_DOCUMENT_DID_OPEN,
     TEXT_DOCUMENT_DID_CHANGE,
+    TEXT_DOCUMENT_DID_OPEN,
     TEXT_DOCUMENT_DID_SAVE,
     TEXT_DOCUMENT_FORMATTING,
-    TEXT_DOCUMENT_CODE_ACTION,
+    TEXT_DOCUMENT_HOVER,
+    CodeActionOptions,
+    CodeActionParams,
     CompletionOptions,
     CompletionParams,
-    HoverParams,
-    DidOpenTextDocumentParams,
     DidChangeTextDocumentParams,
+    DidOpenTextDocumentParams,
     DidSaveTextDocumentParams,
     DocumentFormattingParams,
-    CodeActionParams,
+    HoverParams,
     InitializeParams,
     InitializeResult,
     ServerCapabilities,
     TextDocumentSyncKind,
     TextDocumentSyncOptions,
-    CodeActionOptions,
 )
 from pygls.server import LanguageServer
 
 from .features.completion import CompletionProvider
-from .features.hover import HoverProvider
 from .features.diagnostics import DiagnosticsProvider
 from .features.formatting import FormattingProvider
+from .features.hover import HoverProvider
 from .features.quickfixes import QuickFixesProvider
 
 # Set up logging
@@ -46,7 +46,7 @@ logger = logging.getLogger(__name__)
 
 class VASPLanguageServer(LanguageServer):
     """VASP Language Server implementation."""
-    
+
     def __init__(self):
         super().__init__(name="vasp-lsp", version="0.1.0")
         self.completion_provider = CompletionProvider()
@@ -54,23 +54,23 @@ class VASPLanguageServer(LanguageServer):
         self.diagnostics_provider = DiagnosticsProvider()
         self.formatting_provider = FormattingProvider()
         self.quickfixes_provider = QuickFixesProvider()
-        
+
         # Document cache
         self.documents: dict = {}
         self.document_diagnostics: dict = {}
-        
+
     def get_document_content(self, uri: str) -> Optional[str]:
         """Get document content from cache or workspace."""
         return self.documents.get(uri)
-        
+
     def set_document_content(self, uri: str, content: str):
         """Cache document content."""
         self.documents[uri] = content
-        
+
     def set_document_diagnostics(self, uri: str, diagnostics: list):
         """Cache document diagnostics for code actions."""
         self.document_diagnostics[uri] = diagnostics
-        
+
     def get_document_diagnostics(self, uri: str) -> list:
         """Get cached document diagnostics."""
         return self.document_diagnostics.get(uri, [])
@@ -83,9 +83,9 @@ server = VASPLanguageServer()
 @server.feature("initialize")
 def initialize(params: InitializeParams) -> InitializeResult:
     """Handle server initialization."""
-    logger.info(f"Initializing VASP-LSP v0.1.0")
+    logger.info("Initializing VASP-LSP v0.1.0")
     logger.info(f"Client: {params.client_info.name if params.client_info else 'Unknown'}")
-    
+
     capabilities = ServerCapabilities(
         text_document_sync=TextDocumentSyncOptions(
             open_close=True,
@@ -104,7 +104,7 @@ def initialize(params: InitializeParams) -> InitializeResult:
             ]
         ),
     )
-    
+
     return InitializeResult(capabilities=capabilities)
 
 
@@ -114,7 +114,7 @@ def text_document_did_open(params: DidOpenTextDocumentParams):
     uri = params.text_document.uri
     content = params.text_document.text
     server.set_document_content(uri, content)
-    
+
     # Publish diagnostics
     _publish_diagnostics(uri, content)
 
@@ -144,10 +144,10 @@ def completions(params: CompletionParams):
     """Handle completion request."""
     uri = params.text_document.uri
     content = server.get_document_content(uri)
-    
+
     if content is None:
         return None
-        
+
     return server.completion_provider.get_completions(
         params, content, uri
     )
@@ -158,10 +158,10 @@ def hover(params: HoverParams):
     """Handle hover request."""
     uri = params.text_document.uri
     content = server.get_document_content(uri)
-    
+
     if content is None:
         return None
-        
+
     return server.hover_provider.get_hover(params, content, uri)
 
 
@@ -170,15 +170,15 @@ def formatting(params: DocumentFormattingParams):
     """Handle document formatting request."""
     uri = params.text_document.uri
     content = server.get_document_content(uri)
-    
+
     if content is None:
         return None
-    
+
     options = {
         "tabSize": params.options.tab_size,
         "insertSpaces": params.options.insert_spaces,
     }
-    
+
     return server.formatting_provider.format_document(content, uri, options)
 
 
@@ -187,16 +187,16 @@ def code_action(params: CodeActionParams):
     """Handle code action request."""
     uri = params.text_document.uri
     content = server.get_document_content(uri)
-    
+
     if content is None:
         return None
-    
+
     # Get diagnostics for this document
     diagnostics = server.get_document_diagnostics(uri)
-    
+
     # Filter diagnostics to those in the requested range
     range = params.range
-    
+
     return server.quickfixes_provider.get_code_actions(
         content, uri, diagnostics, range
     )
@@ -238,9 +238,9 @@ def main():
         action="version",
         version="%(prog)s 0.1.0",
     )
-    
+
     args = parser.parse_args()
-    
+
     if args.tcp:
         logger.info(f"Starting VASP-LSP server on {args.host}:{args.port}")
         server.start_tcp(args.host, args.port)

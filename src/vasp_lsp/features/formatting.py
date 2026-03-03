@@ -4,18 +4,19 @@ Provides document formatting capabilities for VASP input files.
 """
 
 from typing import List, Optional
-from lsprotocol.types import TextEdit, Range, Position
 
-from ..parsers.incar_parser import INCARParser, INCARParameter
+from lsprotocol.types import Position, Range, TextEdit
+
+from ..parsers.incar_parser import INCARParser
 
 
 class FormattingProvider:
     """Provides document formatting for VASP files."""
-    
+
     def __init__(self):
         """Initialize formatting provider."""
         pass
-    
+
     def format_document(
         self,
         document_content: str,
@@ -33,29 +34,29 @@ class FormattingProvider:
             List of text edits to apply.
         """
         file_type = self._get_file_type(document_uri)
-        
+
         if file_type == 'INCAR':
             return self._format_incar(document_content)
         elif file_type == 'POSCAR':
             return self._format_poscar(document_content)
         elif file_type == 'KPOINTS':
             return self._format_kpoints(document_content)
-            
+
         return []
-    
+
     def _get_file_type(self, uri: str) -> str:
         """Determine file type from URI."""
         filename = uri.split('/')[-1].upper()
-        
+
         if 'INCAR' in filename:
             return 'INCAR'
         if 'POSCAR' in filename or 'CONTCAR' in filename:
             return 'POSCAR'
         if 'KPOINTS' in filename:
             return 'KPOINTS'
-            
+
         return 'UNKNOWN'
-    
+
     def _format_incar(self, content: str) -> List[TextEdit]:
         """Format INCAR file content.
         
@@ -67,21 +68,21 @@ class FormattingProvider:
         """
         parser = INCARParser(content)
         params = parser.parse()
-        
+
         if not params:
             return []
-        
+
         formatted_lines = []
         formatted_lines.append("# VASP INCAR file")
         formatted_lines.append("")
-        
+
         electronic = []
         ionic = []
         mixing = []
         parallel = []
         output = []
         other = []
-        
+
         electronic_tags = {
             'PREC', 'ISPIN', 'MAGMOM', 'NELM', 'NELMIN', 'NELMDL', 'EDIFF',
             'LREAL', 'ENCUT', 'ENAUG', 'ISMEAR', 'SIGMA', 'LWAVE', 'LCHARG',
@@ -90,22 +91,22 @@ class FormattingProvider:
             'LHFCALC', 'HFSCREEN', 'PRECFOCK', 'LDAU', 'LDAUTYPE', 'LDAUL',
             'LDAUU', 'LDAUJ'
         }
-        
+
         ionic_tags = {
             'IBRION', 'NSW', 'ISIF', 'PSTRESS', 'EDIFFG', 'POTIM', 'SMASS',
             'TEBEG', 'TEEND', 'NFREE', 'POMASS', 'ZVAL'
         }
-        
+
         mixing_tags = {
             'ALGO', 'IALGO', 'LDIAG', 'BMIX', 'AMIX', 'BMIX_MAG', 'AMIX_MAG',
             'AMIN', 'WC', 'INIMIX', 'MAXMIX', 'MIXPRE'
         }
-        
+
         parallel_tags = {
             'NCORE', 'NPAR', 'KPAR', 'LPLANE', 'LSCALU', 'NSIM'
         }
-        
-        
+
+
         for name, param in params.items():
             if name in electronic_tags:
                 electronic.append(param)
@@ -117,10 +118,10 @@ class FormattingProvider:
                 parallel.append(param)
             else:
                 other.append(param)
-        
+
         all_params = list(params.values())
         max_tag_len = max(len(p.name) for p in all_params) if all_params else 0
-        
+
         def format_group(name: str, group):
             if not group:
                 return
@@ -130,21 +131,21 @@ class FormattingProvider:
                 line = f"{param.name:<{max_tag_len}} = {value_str}"
                 formatted_lines.append(line)
             formatted_lines.append("")
-        
+
         format_group("Electronic Structure", electronic)
         format_group("Ionic Relaxation", ionic)
         format_group("Mixing and Convergence", mixing)
         format_group("Parallelization", parallel)
         format_group("Other Parameters", other)
-        
+
         if formatted_lines and formatted_lines[-1] == "":
             formatted_lines.pop()
-        
+
         formatted_content = '\n'.join(formatted_lines)
         lines = content.split('\n')
         end_line = len(lines) - 1
         end_char = len(lines[end_line]) if lines else 0
-        
+
         return [
             TextEdit(
                 range=Range(
@@ -154,7 +155,7 @@ class FormattingProvider:
                 new_text=formatted_content
             )
         ]
-    
+
     def _format_value(self, value) -> str:
         """Format a parameter value."""
         if isinstance(value, bool):
@@ -162,7 +163,7 @@ class FormattingProvider:
         elif isinstance(value, (list, tuple)):
             return " ".join(str(v) for v in value)
         return str(value)
-    
+
     def _format_poscar(self, content: str) -> List[TextEdit]:
         """Format POSCAR file content.
         
@@ -173,19 +174,19 @@ class FormattingProvider:
         lines = content.split('\n')
         if len(lines) < 5:
             return []
-        
+
         formatted_lines = []
-        
+
         # Line 1: System comment
         formatted_lines.append(lines[0].strip() or "POSCAR")
-        
+
         # Line 2: Scaling factor
         try:
             scale = float(lines[1].strip())
             formatted_lines.append(f"   {scale:.10f}")
         except (ValueError, IndexError):
             formatted_lines.append(lines[1] if len(lines) > 1 else "   1.0000000000")
-        
+
         # Lines 3-5: Lattice vectors (ensure proper formatting)
         for i in range(2, 5):
             if i < len(lines):
@@ -200,15 +201,15 @@ class FormattingProvider:
                         formatted_lines.append(lines[i])
                 else:
                     formatted_lines.append(lines[i])
-        
+
         # Line 6: Element symbols (if present)
         if len(lines) > 5:
             formatted_lines.append(lines[5].strip())
-        
+
         # Line 7: Number of atoms per type
         if len(lines) > 6:
             formatted_lines.append(lines[6].strip())
-        
+
         # Line 8: Coordinate type (Direct or Cartesian)
         if len(lines) > 7:
             coord_type = lines[7].strip().upper()
@@ -218,7 +219,7 @@ class FormattingProvider:
                 formatted_lines.append("Cartesian")
             else:
                 formatted_lines.append(coord_type)
-        
+
         # Lines 9+: Coordinates
         for i in range(8, len(lines)):
             line = lines[i]
@@ -226,14 +227,14 @@ class FormattingProvider:
             if not stripped or stripped.startswith('#'):
                 formatted_lines.append(stripped)
                 continue
-            
+
             # Extract comment if present
             comment = ""
             if '#' in line:
                 parts = line.split('#', 1)
                 line = parts[0]
                 comment = "  #" + parts[1]
-            
+
             parts = line.split()
             if len(parts) >= 3:
                 try:
@@ -252,11 +253,11 @@ class FormattingProvider:
                     formatted_lines.append(stripped)
             else:
                 formatted_lines.append(stripped)
-        
+
         formatted_content = '\n'.join(formatted_lines)
         end_line = len(lines) - 1
         end_char = len(lines[end_line]) if lines else 0
-        
+
         return [
             TextEdit(
                 range=Range(
@@ -266,7 +267,7 @@ class FormattingProvider:
                 new_text=formatted_content
             )
         ]
-    
+
     def _format_kpoints(self, content: str) -> List[TextEdit]:
         """Format KPOINTS file content.
         
@@ -277,16 +278,16 @@ class FormattingProvider:
         lines = content.split('\n')
         if len(lines) < 4:
             return []
-        
+
         formatted_lines = []
-        
+
         # Line 1: Comment
         formatted_lines.append(lines[0].strip() or "KPOINTS")
-        
+
         # Line 2: Number of k-points (0 for automatic)
         if len(lines) > 1:
             formatted_lines.append(lines[1].strip())
-        
+
         # Line 3: Grid type (Gamma, Monkhorst-Pack, etc.)
         if len(lines) > 2:
             line3 = lines[2].strip().upper()
@@ -300,7 +301,7 @@ class FormattingProvider:
                 formatted_lines.append("Automatic")
             else:
                 formatted_lines.append(lines[2].strip())
-        
+
         # Line 4: Grid dimensions or k-point list
         if len(lines) > 3:
             parts = lines[3].split()
@@ -322,7 +323,7 @@ class FormattingProvider:
                     formatted_lines.append(lines[3].strip())
             else:
                 formatted_lines.append(lines[3].strip())
-        
+
         # Lines 5+: Additional k-points for line mode or explicit listing
         for i in range(4, len(lines)):
             line = lines[i]
@@ -330,14 +331,14 @@ class FormattingProvider:
             if not stripped or stripped.startswith('#'):
                 formatted_lines.append(stripped)
                 continue
-            
+
             # Extract comment if present
             comment = ""
             if '#' in line:
                 parts = line.split('#', 1)
                 line = parts[0]
                 comment = "  #" + parts[1]
-            
+
             parts = line.split()
             if len(parts) >= 3:
                 try:
@@ -351,11 +352,11 @@ class FormattingProvider:
                     formatted_lines.append(stripped)
             else:
                 formatted_lines.append(stripped)
-        
+
         formatted_content = '\n'.join(formatted_lines)
         end_line = len(lines) - 1
         end_char = len(lines[end_line]) if lines else 0
-        
+
         return [
             TextEdit(
                 range=Range(

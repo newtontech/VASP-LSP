@@ -1,26 +1,26 @@
 """Completion provider for VASP-LSP."""
 
-from typing import List, Optional, Dict, Any
+from typing import List
+
 from lsprotocol.types import (
     CompletionItem,
     CompletionItemKind,
     CompletionList,
     CompletionParams,
-    Position,
 )
 
-from ..schemas.incar_tags import INCAR_TAGS, INCAR_TAG_LIST, INCARTag
+from ..schemas.incar_tags import INCAR_TAG_LIST, INCAR_TAGS
 
 
 class CompletionProvider:
     """Provides autocomplete functionality for VASP files."""
-    
+
     def __init__(self):
         """Initialize completion provider."""
         self.incar_tags = sorted(INCAR_TAG_LIST)
-        
+
     def get_completions(
-        self, 
+        self,
         params: CompletionParams,
         document_content: str,
         document_uri: str
@@ -37,15 +37,15 @@ class CompletionProvider:
         """
         file_type = self._get_file_type(document_uri)
         position = params.position
-        
+
         # Get the current line and word being typed
         lines = document_content.split('\n')
         if position.line >= len(lines):
             return CompletionList(is_incomplete=False, items=[])
-            
+
         current_line = lines[position.line]
         line_prefix = current_line[:position.character]
-        
+
         if file_type == 'INCAR':
             items = self._get_incar_completions(line_prefix, current_line)
         elif file_type == 'POSCAR':
@@ -54,9 +54,9 @@ class CompletionProvider:
             items = self._get_kpoints_completions(position.line)
         else:
             items = []
-            
+
         return CompletionList(is_incomplete=False, items=items)
-        
+
     def _get_file_type(self, uri: str) -> str:
         """Determine file type from URI.
         
@@ -67,7 +67,7 @@ class CompletionProvider:
             File type string (INCAR, POSCAR, KPOINTS, or UNKNOWN).
         """
         filename = uri.split('/')[-1].upper()
-        
+
         # Check for exact matches
         if filename in ['INCAR', 'INCAR.', 'INCAR.VASP']:
             return 'INCAR'
@@ -75,7 +75,7 @@ class CompletionProvider:
             return 'POSCAR'
         if filename in ['KPOINTS', 'KPOINTS.', 'KPOINTS.VASP']:
             return 'KPOINTS'
-            
+
         # Check for prefixes
         if filename.startswith('INCAR'):
             return 'INCAR'
@@ -83,9 +83,9 @@ class CompletionProvider:
             return 'POSCAR'
         if filename.startswith('KPOINTS'):
             return 'KPOINTS'
-            
+
         return 'UNKNOWN'
-        
+
     def _get_incar_completions(self, line_prefix: str, current_line: str) -> List[CompletionItem]:
         """Get completion items for INCAR files.
         
@@ -97,19 +97,19 @@ class CompletionProvider:
             List of completion items.
         """
         items = []
-        
+
         # Check if we're typing a tag name (before '=' or at start of line)
         if '=' not in line_prefix:
             # Get the partial word being typed
             words = line_prefix.strip().split()
             partial = words[-1] if words else ""
-            
+
             # Filter tags that match the partial word
             matching_tags = [
                 tag for tag in self.incar_tags
                 if tag.startswith(partial.upper()) or partial.upper() in tag
             ]
-            
+
             for tag_name in matching_tags[:50]:  # Limit to 50 results
                 tag = INCAR_TAGS.get(tag_name)
                 if tag:
@@ -122,12 +122,12 @@ class CompletionProvider:
                         sort_text=tag_name,
                     )
                     items.append(item)
-                    
+
         else:
             # We're after '=', provide value completions
             tag_name = line_prefix.split('=')[0].strip().upper()
             tag = INCAR_TAGS.get(tag_name)
-            
+
             if tag and tag.enum_values:
                 for value in tag.enum_values:
                     item = CompletionItem(
@@ -137,7 +137,7 @@ class CompletionProvider:
                         insert_text=value,
                     )
                     items.append(item)
-                    
+
             elif tag and tag.type == "boolean":
                 for value in ['.TRUE.', '.FALSE.']:
                     item = CompletionItem(
@@ -146,9 +146,9 @@ class CompletionProvider:
                         insert_text=value,
                     )
                     items.append(item)
-                    
+
         return items
-        
+
     def _get_poscar_completions(self, line_number: int) -> List[CompletionItem]:
         """Get completion items for POSCAR files.
         
@@ -159,7 +159,7 @@ class CompletionProvider:
             List of completion items.
         """
         items = []
-        
+
         # Line-specific completions for POSCAR
         if line_number == 0:
             # System comment
@@ -170,7 +170,7 @@ class CompletionProvider:
                 insert_text="System name",
             )
             items.append(item)
-            
+
         elif line_number == 1:
             # Scale factor
             item = CompletionItem(
@@ -180,7 +180,7 @@ class CompletionProvider:
                 insert_text="1.0",
             )
             items.append(item)
-            
+
         elif line_number in [2, 3, 4]:
             # Lattice vectors
             item = CompletionItem(
@@ -190,7 +190,7 @@ class CompletionProvider:
                 insert_text="1.0 0.0 0.0",
             )
             items.append(item)
-            
+
         elif line_number == 5:
             # Atom types
             item = CompletionItem(
@@ -200,7 +200,7 @@ class CompletionProvider:
                 insert_text="H He Li",
             )
             items.append(item)
-            
+
         elif line_number == 6:
             # Atom counts
             item = CompletionItem(
@@ -210,9 +210,9 @@ class CompletionProvider:
                 insert_text="2 4 1",
             )
             items.append(item)
-            
+
         return items
-        
+
     def _get_kpoints_completions(self, line_number: int) -> List[CompletionItem]:
         """Get completion items for KPOINTS files.
         
@@ -223,7 +223,7 @@ class CompletionProvider:
             List of completion items.
         """
         items = []
-        
+
         if line_number == 1:
             # Number of k-points or mode
             items.extend([
@@ -252,7 +252,7 @@ class CompletionProvider:
                     insert_text="Line-mode\n20\nReciprocal",
                 ),
             ])
-            
+
         elif line_number == 2:
             items.extend([
                 CompletionItem(
@@ -274,5 +274,5 @@ class CompletionProvider:
                     insert_text="8 8 8",
                 ),
             ])
-            
+
         return items

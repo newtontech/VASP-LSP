@@ -1,8 +1,8 @@
 """INCAR file parser for VASP-LSP."""
 
 import re
-from typing import Dict, List, Optional, Tuple, Any
 from dataclasses import dataclass
+from typing import Any, Dict, List, Optional
 
 
 @dataclass
@@ -18,7 +18,7 @@ class INCARParameter:
 
 class INCARParser:
     """Parser for VASP INCAR input files."""
-    
+
     # Regular expression for parsing INCAR lines
     # Matches: TAG = value  or  TAG= value  or  TAG =value  or  TAG=value
     # Also handles comments starting with # or !
@@ -26,10 +26,10 @@ class INCARParser:
         r'^\s*(?P<name>[A-Za-z_][A-Za-z0-9_]*)\s*=\s*(?P<value>[^#!]*)',
         re.IGNORECASE
     )
-    
+
     # Comment patterns
     COMMENT_REGEX = re.compile(r'[#!].*$')
-    
+
     def __init__(self, content: str):
         """Initialize parser with INCAR file content.
         
@@ -40,7 +40,7 @@ class INCARParser:
         self.lines = content.split('\n')
         self.parameters: Dict[str, INCARParameter] = {}
         self.errors: List[Dict[str, Any]] = []
-        
+
     def parse(self) -> Dict[str, INCARParameter]:
         """Parse the INCAR file content.
         
@@ -49,7 +49,7 @@ class INCARParser:
         """
         self.parameters = {}
         self.errors = []
-        
+
         for line_num, line in enumerate(self.lines, start=1):
             try:
                 param = self._parse_line(line, line_num)
@@ -69,9 +69,9 @@ class INCARParser:
                     'column': 0,
                     'severity': 'error'
                 })
-                
+
         return self.parameters
-    
+
     def _parse_line(self, line: str, line_num: int) -> Optional[INCARParameter]:
         """Parse a single INCAR line.
         
@@ -86,7 +86,7 @@ class INCARParser:
         stripped = line.strip()
         if not stripped or stripped.startswith('#') or stripped.startswith('!'):
             return None
-            
+
         # Try to match parameter pattern
         match = self.PARAM_REGEX.match(line)
         if not match:
@@ -99,16 +99,16 @@ class INCARParser:
                     'severity': 'error'
                 })
             return None
-            
+
         name = match.group('name').upper()
         value_str = match.group('value').strip()
-        
+
         # Remove trailing comments
         value_str = self.COMMENT_REGEX.sub('', value_str).strip()
-        
+
         # Parse value
         value = self._parse_value(value_str)
-        
+
         return INCARParameter(
             name=name,
             value=value,
@@ -117,7 +117,7 @@ class INCARParser:
             column_end=match.end('value'),
             raw_line=line
         )
-    
+
     def _parse_value(self, value_str: str) -> Any:
         """Parse an INCAR parameter value.
         
@@ -128,25 +128,25 @@ class INCARParser:
             Parsed value (int, float, bool, or string).
         """
         value_upper = value_str.upper()
-        
+
         # Handle boolean values
         if value_upper in ['.TRUE.', 'T', 'TRUE']:
             return True
         if value_upper in ['.FALSE.', 'F', 'FALSE']:
             return False
-            
+
         # Try integer
         try:
             return int(value_str)
         except ValueError:
             pass
-            
+
         # Try float
         try:
             return float(value_str)
         except ValueError:
             pass
-            
+
         # Handle array values (space-separated)
         if ' ' in value_str:
             parts = value_str.split()
@@ -160,10 +160,10 @@ class INCARParser:
                     except ValueError:
                         parsed_parts.append(part)
             return parsed_parts
-            
+
         # Return as string
         return value_str
-    
+
     def get_parameter(self, name: str) -> Optional[INCARParameter]:
         """Get a parameter by name.
         
@@ -174,7 +174,7 @@ class INCARParser:
             INCARParameter if found, None otherwise.
         """
         return self.parameters.get(name.upper())
-    
+
     def has_parameter(self, name: str) -> bool:
         """Check if a parameter exists.
         
@@ -185,7 +185,7 @@ class INCARParser:
             True if parameter exists.
         """
         return name.upper() in self.parameters
-    
+
     def get_all_parameters(self) -> Dict[str, INCARParameter]:
         """Get all parsed parameters.
         
@@ -193,7 +193,7 @@ class INCARParser:
             Dictionary of all parameters.
         """
         return self.parameters.copy()
-    
+
     def get_errors(self) -> List[Dict[str, Any]]:
         """Get all parse errors and warnings.
         

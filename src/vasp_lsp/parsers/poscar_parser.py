@@ -1,8 +1,7 @@
 """POSCAR file parser for VASP-LSP."""
 
-import re
-from typing import List, Optional, Tuple, Dict, Any
 from dataclasses import dataclass
+from typing import Any, Dict, List, Optional
 
 
 @dataclass
@@ -20,7 +19,7 @@ class POSCARData:
 
 class POSCARParser:
     """Parser for VASP POSCAR/CONTCAR structure files."""
-    
+
     def __init__(self, content: str):
         """Initialize parser with POSCAR file content.
         
@@ -31,7 +30,7 @@ class POSCARParser:
         self.lines = content.split('\n')
         self.data: Optional[POSCARData] = None
         self.errors: List[Dict[str, Any]] = []
-        
+
     def parse(self) -> Optional[POSCARData]:
         """Parse the POSCAR file content.
         
@@ -39,14 +38,14 @@ class POSCARParser:
             POSCARData object if successful, None otherwise.
         """
         self.errors = []
-        
+
         try:
             line_idx = 0
-            
+
             # Line 1: System comment
             system_comment = self.lines[line_idx].strip()
             line_idx += 1
-            
+
             # Line 2: Scale factor
             try:
                 scale_factor = float(self.lines[line_idx].strip())
@@ -58,7 +57,7 @@ class POSCARParser:
                 })
                 return None
             line_idx += 1
-            
+
             # Lines 3-5: Lattice vectors
             lattice_vectors = []
             for i in range(3):
@@ -76,7 +75,7 @@ class POSCARParser:
                     })
                     return None
                 line_idx += 1
-                
+
             # Line 6: Atom types (optional in VASP 5 format, required in VASP 4)
             atom_types_line = self.lines[line_idx].strip()
             # Check if it's atom symbols or atom counts
@@ -85,7 +84,7 @@ class POSCARParser:
                 line_idx += 1
             else:
                 atom_types = []
-                
+
             # Line 6/7: Atom counts
             try:
                 atom_counts = [int(x) for x in self.lines[line_idx].strip().split()]
@@ -103,11 +102,11 @@ class POSCARParser:
                 })
                 return None
             line_idx += 1
-            
+
             # If no atom types were specified, create generic ones
             if not atom_types:
                 atom_types = [f"Type{i+1}" for i in range(len(atom_counts))]
-                
+
             # Check for selective dynamics line
             selective_dynamics = None
             coord_type_line = self.lines[line_idx].strip().lower()
@@ -115,7 +114,7 @@ class POSCARParser:
                 selective_dynamics = []
                 line_idx += 1
                 coord_type_line = self.lines[line_idx].strip().lower()
-                
+
             # Coordinate type
             if coord_type_line.startswith('d'):
                 coordinate_type = "Direct"
@@ -129,13 +128,13 @@ class POSCARParser:
                 })
                 return None
             line_idx += 1
-            
+
             # Read coordinates
             total_atoms = sum(atom_counts)
             coordinates = []
             if selective_dynamics is not None:
                 selective_dynamics = []
-                
+
             for i in range(total_atoms):
                 try:
                     parts = self.lines[line_idx].strip().split()
@@ -143,7 +142,7 @@ class POSCARParser:
                         raise ValueError(f"Expected at least 3 values, got {len(parts)}")
                     coord = [float(parts[0]), float(parts[1]), float(parts[2])]
                     coordinates.append(coord)
-                    
+
                     # Parse selective dynamics flags if present
                     if selective_dynamics is not None:
                         if len(parts) >= 6:
@@ -155,7 +154,7 @@ class POSCARParser:
                         else:
                             flags = [True, True, True]  # Default to movable
                         selective_dynamics.append(flags)
-                        
+
                 except (ValueError, IndexError) as e:
                     self.errors.append({
                         'message': f"Invalid coordinate for atom {i+1}: {e}",
@@ -164,7 +163,7 @@ class POSCARParser:
                     })
                     return None
                 line_idx += 1
-                
+
             self.data = POSCARData(
                 system_comment=system_comment,
                 scale_factor=scale_factor,
@@ -175,9 +174,9 @@ class POSCARParser:
                 coordinates=coordinates,
                 selective_dynamics=selective_dynamics
             )
-            
+
             return self.data
-            
+
         except Exception as e:
             self.errors.append({
                 'message': f"Unexpected parse error: {str(e)}",
@@ -185,7 +184,7 @@ class POSCARParser:
                 'severity': 'error'
             })
             return None
-            
+
     def get_errors(self) -> List[Dict[str, Any]]:
         """Get all parse errors.
         

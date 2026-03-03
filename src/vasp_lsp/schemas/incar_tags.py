@@ -4,14 +4,14 @@ This module contains structured metadata for VASP INCAR parameters,
 enabling autocomplete, validation, and documentation features.
 """
 
-from typing import Dict, List, Optional, Any, Union
-from dataclasses import dataclass, field
+from dataclasses import dataclass
+from typing import Any, Dict, List, Optional
 
 
 @dataclass
 class INCARTag:
     """Metadata for a single INCAR tag."""
-    
+
     name: str
     type: str  # "integer", "float", "boolean", "string", "array"
     default: Any
@@ -22,7 +22,7 @@ class INCARTag:
     requires: Optional[List[str]] = None  # Related tags that should be set
     conflicts_with: Optional[List[str]] = None  # Tags that conflict with this one
     version_note: Optional[str] = None  # Version-specific notes
-    
+
     def to_markdown(self) -> str:
         """Generate markdown documentation for this tag."""
         lines = [f"### {self.name}", ""]
@@ -55,7 +55,7 @@ INCAR_TAGS: Dict[str, INCARTag] = {
         category="electronic",
         valid_range=(0.0, None),
     ),
-    
+
     "ISMEAR": INCARTag(
         name="ISMEAR",
         type="integer",
@@ -64,7 +64,7 @@ INCAR_TAGS: Dict[str, INCARTag] = {
         category="electronic",
         enum_values=["-5", "-4", "-3", "-2", "-1", "0", "1", "2"],
     ),
-    
+
     "SIGMA": INCARTag(
         name="SIGMA",
         type="float",
@@ -74,7 +74,7 @@ INCAR_TAGS: Dict[str, INCARTag] = {
         valid_range=(0.0, None),
         requires=["ISMEAR"],
     ),
-    
+
     "EDIFF": INCARTag(
         name="EDIFF",
         type="float",
@@ -83,7 +83,7 @@ INCAR_TAGS: Dict[str, INCARTag] = {
         category="electronic",
         valid_range=(0.0, None),
     ),
-    
+
     "NELM": INCARTag(
         name="NELM",
         type="integer",
@@ -92,7 +92,7 @@ INCAR_TAGS: Dict[str, INCARTag] = {
         category="electronic",
         valid_range=(1, None),
     ),
-    
+
     "NELMIN": INCARTag(
         name="NELMIN",
         type="integer",
@@ -101,17 +101,17 @@ INCAR_TAGS: Dict[str, INCARTag] = {
         category="electronic",
         valid_range=(1, None),
     ),
-    
+
     "ALGO": INCARTag(
         name="ALGO",
         type="string",
         default="Normal",
         description="Algorithm for electronic minimization. Options: Normal (Davidson), Fast (RMM-DIIS), Very_Fast (RMM-DIIS with more aggressive settings), All (all algorithms sequentially), Damped (damped second-order Vaswani algorithm), Eigenval (optimization of one-electron energies), None (no optimization), Exact (exact diagonalization), CHI (response function calculation), G0W0R, G0W0, G0W0R, scGW0R, scGW0, scGW0R, G0W0R, BSE.",
         category="electronic",
-        enum_values=["Normal", "Fast", "Very_Fast", "All", "Damped", "Eigenval", "None", 
+        enum_values=["Normal", "Fast", "Very_Fast", "All", "Damped", "Eigenval", "None",
                      "Exact", "CHI", "G0W0", "scGW0", "scGW", "BSE"],
     ),
-    
+
     "ISPIN": INCARTag(
         name="ISPIN",
         type="integer",
@@ -120,7 +120,7 @@ INCAR_TAGS: Dict[str, INCARTag] = {
         category="electronic",
         enum_values=["1", "2"],
     ),
-    
+
     "MAGMOM": INCARTag(
         name="MAGMOM",
         type="array",
@@ -129,7 +129,7 @@ INCAR_TAGS: Dict[str, INCARTag] = {
         category="electronic",
         requires=["ISPIN"],
     ),
-    
+
     "LORBIT": INCARTag(
         name="LORBIT",
         type="integer",
@@ -138,7 +138,7 @@ INCAR_TAGS: Dict[str, INCARTag] = {
         category="output",
         enum_values=["0", "1", "2", "5", "10", "11", "12"],
     ),
-    
+
     "NEDOS": INCARTag(
         name="NEDOS",
         type="integer",
@@ -147,7 +147,7 @@ INCAR_TAGS: Dict[str, INCARTag] = {
         category="output",
         valid_range=(1, None),
     ),
-    
+
     # Ionic relaxation
     "IBRION": INCARTag(
         name="IBRION",
@@ -157,7 +157,7 @@ INCAR_TAGS: Dict[str, INCARTag] = {
         category="ionic",
         enum_values=["-1", "0", "1", "2", "3", "5", "6", "7", "8"],
     ),
-    
+
     "NSW": INCARTag(
         name="NSW",
         type="integer",
@@ -166,7 +166,7 @@ INCAR_TAGS: Dict[str, INCARTag] = {
         category="ionic",
         valid_range=(0, None),
     ),
-    
+
     "EDIFFG": INCARTag(
         name="EDIFFG",
         type="float",
@@ -174,7 +174,7 @@ INCAR_TAGS: Dict[str, INCARTag] = {
         description="Convergence criterion for ionic relaxation. If EDIFFG < 0, relaxation stops when all forces are smaller than |EDIFFG| in eV/Å. If EDIFFG > 0, relaxation stops when the energy change is smaller than EDIFFG in eV.",
         category="ionic",
     ),
-    
+
     "POTIM": INCARTag(
         name="POTIM",
         type="float",
@@ -183,7 +183,7 @@ INCAR_TAGS: Dict[str, INCARTag] = {
         category="ionic",
         valid_range=(0.0, None),
     ),
-    
+
     "ISIF": INCARTag(
         name="ISIF",
         type="integer",
@@ -192,7 +192,7 @@ INCAR_TAGS: Dict[str, INCARTag] = {
         category="ionic",
         enum_values=["0", "1", "2", "3", "4", "5", "6", "7"],
     ),
-    
+
     # K-points
     "KGAMMA": INCARTag(
         name="KGAMMA",
@@ -201,7 +201,7 @@ INCAR_TAGS: Dict[str, INCARTag] = {
         description="If .TRUE., the k-point grid includes the Gamma point. Only relevant for Monkhorst-Pack grids.",
         category="electronic",
     ),
-    
+
     # Parallelization
     "NCORE": INCARTag(
         name="NCORE",
@@ -211,7 +211,7 @@ INCAR_TAGS: Dict[str, INCARTag] = {
         category="parallel",
         valid_range=(1, None),
     ),
-    
+
     "NPAR": INCARTag(
         name="NPAR",
         type="integer",
@@ -221,7 +221,7 @@ INCAR_TAGS: Dict[str, INCARTag] = {
         valid_range=(1, None),
         conflicts_with=["NCORE"],
     ),
-    
+
     "KPAR": INCARTag(
         name="KPAR",
         type="integer",
@@ -230,7 +230,7 @@ INCAR_TAGS: Dict[str, INCARTag] = {
         category="parallel",
         valid_range=(1, None),
     ),
-    
+
     # Output control
     "LWAVE": INCARTag(
         name="LWAVE",
@@ -239,7 +239,7 @@ INCAR_TAGS: Dict[str, INCARTag] = {
         description="Determines whether the wavefunctions are written to the WAVECAR file.",
         category="output",
     ),
-    
+
     "LCHARG": INCARTag(
         name="LCHARG",
         type="boolean",
@@ -247,7 +247,7 @@ INCAR_TAGS: Dict[str, INCARTag] = {
         description="Determines whether the charge density is written to the CHGCAR file.",
         category="output",
     ),
-    
+
     "LAECHG": INCARTag(
         name="LAECHG",
         type="boolean",
@@ -255,7 +255,7 @@ INCAR_TAGS: Dict[str, INCARTag] = {
         description="Determines whether the all-electron charge density is written to the AECCAR0/AECCAR2 files for Bader analysis.",
         category="output",
     ),
-    
+
     "LVHAR": INCARTag(
         name="LVHAR",
         type="boolean",
@@ -263,7 +263,7 @@ INCAR_TAGS: Dict[str, INCARTag] = {
         description="Determines whether the electrostatic potential (Hartree potential) is written to the LOCPOT file.",
         category="output",
     ),
-    
+
     "LVTOT": INCARTag(
         name="LVTOT",
         type="boolean",
@@ -271,7 +271,7 @@ INCAR_TAGS: Dict[str, INCARTag] = {
         description="Determines whether the total local potential is written to the LOCPOT file.",
         category="output",
     ),
-    
+
     "LELF": INCARTag(
         name="LELF",
         type="boolean",
@@ -279,7 +279,7 @@ INCAR_TAGS: Dict[str, INCARTag] = {
         description="Determines whether the electron localization function (ELF) is written to the ELFCAR file.",
         category="output",
     ),
-    
+
     "LORBITALREAL": INCARTag(
         name="LORBITALREAL",
         type="boolean",
@@ -287,7 +287,7 @@ INCAR_TAGS: Dict[str, INCARTag] = {
         description="Determines whether real-space projection operators are used.",
         category="electronic",
     ),
-    
+
     # Hybrid functionals
     "LHFCALC": INCARTag(
         name="LHFCALC",
@@ -296,7 +296,7 @@ INCAR_TAGS: Dict[str, INCARTag] = {
         description="Determines whether Hartree-Fock type calculations are performed. If set to .TRUE., a hybrid functional calculation is performed.",
         category="electronic",
     ),
-    
+
     "HFSCREEN": INCARTag(
         name="HFSCREEN",
         type="float",
@@ -306,7 +306,7 @@ INCAR_TAGS: Dict[str, INCARTag] = {
         valid_range=(0.0, None),
         requires=["LHFCALC"],
     ),
-    
+
     "PRECFOCK": INCARTag(
         name="PRECFOCK",
         type="string",
@@ -316,7 +316,7 @@ INCAR_TAGS: Dict[str, INCARTag] = {
         enum_values=["Low", "Medium", "Normal", "Fast", "Accurate"],
         requires=["LHFCALC"],
     ),
-    
+
     # Van der Waals corrections
     "IVDW": INCARTag(
         name="IVDW",
@@ -326,7 +326,7 @@ INCAR_TAGS: Dict[str, INCARTag] = {
         category="electronic",
         enum_values=["0", "1", "11", "12", "2", "21", "202"],
     ),
-    
+
     # DFT+U
     "LDAU": INCARTag(
         name="LDAU",
@@ -335,7 +335,7 @@ INCAR_TAGS: Dict[str, INCARTag] = {
         description="Determines whether the DFT+U calculation is performed (LSDA+U or GGA+U).",
         category="electronic",
     ),
-    
+
     "LDAUTYPE": INCARTag(
         name="LDAUTYPE",
         type="integer",
@@ -345,7 +345,7 @@ INCAR_TAGS: Dict[str, INCARTag] = {
         enum_values=["1", "2", "4"],
         requires=["LDAU"],
     ),
-    
+
     "LDAUL": INCARTag(
         name="LDAUL",
         type="array",
@@ -354,7 +354,7 @@ INCAR_TAGS: Dict[str, INCARTag] = {
         category="electronic",
         requires=["LDAU"],
     ),
-    
+
     "LDAUU": INCARTag(
         name="LDAUU",
         type="array",
@@ -363,7 +363,7 @@ INCAR_TAGS: Dict[str, INCARTag] = {
         category="electronic",
         requires=["LDAU"],
     ),
-    
+
     # Magnetic calculations
     "LSORBIT": INCARTag(
         name="LSORBIT",
@@ -372,7 +372,7 @@ INCAR_TAGS: Dict[str, INCARTag] = {
         description="Determines whether spin-orbit coupling is included. If set to .TRUE., a non-collinear calculation with spin-orbit coupling is performed.",
         category="electronic",
     ),
-    
+
     "SAXIS": INCARTag(
         name="SAXIS",
         type="array",
@@ -381,7 +381,7 @@ INCAR_TAGS: Dict[str, INCARTag] = {
         category="electronic",
         requires=["LSORBIT"],
     ),
-    
+
     # Charge mixing
     "AMIX": INCARTag(
         name="AMIX",
@@ -391,7 +391,7 @@ INCAR_TAGS: Dict[str, INCARTag] = {
         category="electronic",
         valid_range=(0.0, 1.0),
     ),
-    
+
     "BMIX": INCARTag(
         name="BMIX",
         type="float",
@@ -400,7 +400,7 @@ INCAR_TAGS: Dict[str, INCARTag] = {
         category="electronic",
         valid_range=(0.0, None),
     ),
-    
+
     "AMIN": INCARTag(
         name="AMIN",
         type="float",
@@ -409,7 +409,7 @@ INCAR_TAGS: Dict[str, INCARTag] = {
         category="electronic",
         valid_range=(0.0, 1.0),
     ),
-    
+
     # Other
     "SYSTEM": INCARTag(
         name="SYSTEM",
@@ -418,7 +418,7 @@ INCAR_TAGS: Dict[str, INCARTag] = {
         description="A description of the calculation. This string is written to the OUTCAR and OSZICAR files.",
         category="general",
     ),
-    
+
     "NWRITE": INCARTag(
         name="NWRITE",
         type="integer",
@@ -427,7 +427,7 @@ INCAR_TAGS: Dict[str, INCARTag] = {
         category="output",
         enum_values=["0", "1", "2", "3", "4"],
     ),
-    
+
     "PREC": INCARTag(
         name="PREC",
         type="string",
@@ -436,7 +436,7 @@ INCAR_TAGS: Dict[str, INCARTag] = {
         category="electronic",
         enum_values=["Normal", "Accurate", "Single", "Fast"],
     ),
-    
+
     "ISTART": INCARTag(
         name="ISTART",
         type="integer",
@@ -445,7 +445,7 @@ INCAR_TAGS: Dict[str, INCARTag] = {
         category="electronic",
         enum_values=["0", "1"],
     ),
-    
+
     "ICHARG": INCARTag(
         name="ICHARG",
         type="integer",
@@ -454,7 +454,7 @@ INCAR_TAGS: Dict[str, INCARTag] = {
         category="electronic",
         enum_values=["0", "1", "2", "11", "12"],
     ),
-    
+
     "NBANDS": INCARTag(
         name="NBANDS",
         type="integer",
@@ -463,7 +463,7 @@ INCAR_TAGS: Dict[str, INCARTag] = {
         category="electronic",
         valid_range=(1, None),
     ),
-    
+
     "NELECT": INCARTag(
         name="NELECT",
         type="float",
@@ -471,7 +471,7 @@ INCAR_TAGS: Dict[str, INCARTag] = {
         description="Total number of electrons in the system. Can be used to set a different number of electrons than determined from POTCAR.",
         category="electronic",
     ),
-    
+
     "LREAL": INCARTag(
         name="LREAL",
         type="string",
@@ -480,7 +480,7 @@ INCAR_TAGS: Dict[str, INCARTag] = {
         category="electronic",
         enum_values=[".FALSE.", ".TRUE.", "On", "Auto"],
     ),
-    
+
     "ROPT": INCARTag(
         name="ROPT",
         type="array",
@@ -489,7 +489,7 @@ INCAR_TAGS: Dict[str, INCARTag] = {
         category="electronic",
         requires=["LREAL"],
     ),
-    
+
     "EMIN": INCARTag(
         name="EMIN",
         type="float",
@@ -497,7 +497,7 @@ INCAR_TAGS: Dict[str, INCARTag] = {
         description="Minimum energy for DOS calculation in eV.",
         category="output",
     ),
-    
+
     "EMAX": INCARTag(
         name="EMAX",
         type="float",

@@ -1,19 +1,20 @@
 """Diagnostics provider for VASP-LSP."""
 
 from typing import List
-from lsprotocol.types import Diagnostic, DiagnosticSeverity, Range, Position
+
+from lsprotocol.types import Diagnostic, DiagnosticSeverity, Position, Range
 
 from ..parsers.incar_parser import INCARParser
-from ..schemas.incar_tags import INCAR_TAGS, get_tag_info
+from ..schemas.incar_tags import get_tag_info
 
 
 class DiagnosticsProvider:
     """Provides diagnostics (error checking) for VASP files."""
-    
+
     def __init__(self):
         """Initialize diagnostics provider."""
         pass
-        
+
     def get_diagnostics(
         self,
         document_content: str,
@@ -29,44 +30,44 @@ class DiagnosticsProvider:
             List of diagnostic messages.
         """
         file_type = self._get_file_type(document_uri)
-        
+
         if file_type == 'INCAR':
             return self._get_incar_diagnostics(document_content)
         elif file_type == 'POSCAR':
             return self._get_poscar_diagnostics(document_content)
         elif file_type == 'KPOINTS':
             return self._get_kpoints_diagnostics(document_content)
-            
+
         return []
-        
+
     def _get_file_type(self, uri: str) -> str:
         """Determine file type from URI."""
         filename = uri.split('/')[-1].upper()
-        
+
         if 'INCAR' in filename:
             return 'INCAR'
         if 'POSCAR' in filename or 'CONTCAR' in filename:
             return 'POSCAR'
         if 'KPOINTS' in filename:
             return 'KPOINTS'
-            
+
         return 'UNKNOWN'
-        
+
     def _get_incar_diagnostics(self, content: str) -> List[Diagnostic]:
         """Get diagnostics for INCAR files."""
         diagnostics = []
-        
+
         # Parse the INCAR file
         parser = INCARParser(content)
         parser.parse()
-        
+
         # Report parse errors
         for error in parser.get_errors():
             severity = (
                 DiagnosticSeverity.Error if error['severity'] == 'error'
                 else DiagnosticSeverity.Warning
             )
-            
+
             diagnostic = Diagnostic(
                 range=Range(
                     start=Position(line=error['line'] - 1, character=error.get('column', 0)),
@@ -77,7 +78,7 @@ class DiagnosticsProvider:
                 source='vasp-lsp'
             )
             diagnostics.append(diagnostic)
-            
+
         # Check for unknown tags
         for param_name, param in parser.get_all_parameters().items():
             if get_tag_info(param_name) is None:
@@ -96,17 +97,17 @@ class DiagnosticsProvider:
                 tag = get_tag_info(param_name)
                 value_diagnostics = self._validate_incar_value(tag, param, content)
                 diagnostics.extend(value_diagnostics)
-                
+
         # Check for parameter dependencies and conflicts
         diagnostics.extend(self._check_incar_dependencies(parser))
-        
+
         return diagnostics
-        
+
     def _validate_incar_value(self, tag, param, content) -> List[Diagnostic]:
         """Validate a single INCAR parameter value."""
         diagnostics = []
         value = param.value
-        
+
         # Check enum values
         if tag.enum_values and value is not None:
             str_value = str(value).upper()
@@ -135,7 +136,7 @@ class DiagnosticsProvider:
                         severity=DiagnosticSeverity.Warning,
                         source='vasp-lsp'
                     ))
-                    
+
         # Check range for numeric values
         if tag.valid_range and isinstance(value, (int, float)):
             min_val, max_val = tag.valid_range
@@ -159,17 +160,17 @@ class DiagnosticsProvider:
                     severity=DiagnosticSeverity.Warning,
                     source='vasp-lsp'
                 ))
-                
+
         return diagnostics
-        
+
     def _check_incar_dependencies(self, parser: INCARParser) -> List[Diagnostic]:
         """Check for parameter dependencies and conflicts."""
         diagnostics = []
-        
+
         # Check ISMEAR and SIGMA relationship
         ismear = parser.get_parameter('ISMEAR')
         sigma = parser.get_parameter('SIGMA')
-        
+
         if ismear and not sigma:
             if isinstance(ismear.value, int) and ismear.value >= 0:
                 diagnostics.append(Diagnostic(
@@ -181,11 +182,11 @@ class DiagnosticsProvider:
                     severity=DiagnosticSeverity.Information,
                     source='vasp-lsp'
                 ))
-                
+
         # Check NCORE and NPAR conflict
         ncore = parser.get_parameter('NCORE')
         npar = parser.get_parameter('NPAR')
-        
+
         if ncore and npar:
             diagnostics.append(Diagnostic(
                 range=Range(
@@ -196,7 +197,7 @@ class DiagnosticsProvider:
                 severity=DiagnosticSeverity.Warning,
                 source='vasp-lsp'
             ))
-            
+
         # Check LDAU requirements
         ldau = parser.get_parameter('LDAU')
         if ldau and ldau.value:
@@ -230,7 +231,7 @@ class DiagnosticsProvider:
                     severity=DiagnosticSeverity.Warning,
                     source='vasp-lsp'
                 ))
-                
+
         # Check hybrid functional requirements
         lhf = parser.get_parameter('LHFCALC')
         if lhf and lhf.value:
@@ -238,11 +239,11 @@ class DiagnosticsProvider:
                 pass  # Has default, so optional
             if not parser.get_parameter('PRECFOCK'):
                 pass  # Has default
-                
+
         # Check spin-polarization and MAGMOM
         ispin = parser.get_parameter('ISPIN')
         magmom = parser.get_parameter('MAGMOM')
-        
+
         if ispin and isinstance(ispin.value, int) and ispin.value == 2 and not magmom:
             diagnostics.append(Diagnostic(
                 range=Range(
@@ -253,14 +254,14 @@ class DiagnosticsProvider:
                 severity=DiagnosticSeverity.Information,
                 source='vasp-lsp'
             ))
-            
+
         return diagnostics
-        
+
     def _get_poscar_diagnostics(self, content: str) -> List[Diagnostic]:
         """Get diagnostics for POSCAR files."""
         # TODO: Implement POSCAR validation
         return []
-        
+
     def _get_kpoints_diagnostics(self, content: str) -> List[Diagnostic]:
         """Get diagnostics for KPOINTS files."""
         # TODO: Implement KPOINTS validation
