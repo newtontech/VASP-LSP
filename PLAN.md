@@ -108,3 +108,29 @@ All modules at 100%:
 - ✅ Added syntax highlighting for INCAR, POSCAR, KPOINTS
 - ✅ Added snippets for common INCAR templates
 - ✅ Extension manifest with proper language definitions
+
+
+## Version 0.4.3 (2026-03-04) - Cron Session
+
+### New Features
+- ✅ Implemented POSCAR file quick fixes
+  - Fix negative scale factor (convert to positive)
+  - Wrap out-of-range direct coordinates to [0, 1] range
+  - Handle selective dynamics flags in coordinate fixes
+- ✅ Implemented KPOINTS file quick fixes
+  - Fix non-positive grid values (set to 1)
+  - Normalize k-point weights to sum to 1.0
+
+### Tests
+- Added 18 new tests for POSCAR/KPOINTS quick fixes
+- Total tests: 446 (up from 428)
+- Coverage: 99% (1175/1178 statements covered)
+
+### Code Changes
+- Updated src/vasp_lsp/features/quickfixes.py
+  - Implemented _get_poscar_code_actions method
+  - Implemented _get_kpoints_code_actions method
+  - Added _create_fix_negative_scale_action helper
+  - Added _create_wrap_coordinates_action helper
+  - Added _create_fix_grid_action helper
+  - Added _create_normalize_weights_action helper
