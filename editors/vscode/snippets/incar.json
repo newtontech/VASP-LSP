@@ -1,0 +1,79 @@
+{
+  "INCAR Basic": {
+    "prefix": "basic",
+    "body": [
+      "# Basic INCAR for SCF calculation",
+      "ENCUT = ${1:400}",
+      "ISMEAR = ${2:0}",
+      "SIGMA = ${3:0.1}",
+      "EDIFF = ${4:1E-6}",
+      "ALGO = ${5:Normal}",
+      ""
+    ],
+    "description": "Basic INCAR template for SCF calculation"
+  },
+  "INCAR Relaxation": {
+    "prefix": "relax",
+    "body": [
+      "# INCAR for structure relaxation",
+      "ENCUT = ${1:400}",
+      "ISMEAR = ${2:0}",
+      "SIGMA = ${3:0.1}",
+      "EDIFF = ${4:1E-6}",
+      "EDIFFG = ${5:-0.01}",
+      "IBRION = ${6:2}",
+      "NSW = ${7:100}",
+      "ISIF = ${8:3}",
+      ""
+    ],
+    "description": "INCAR template for structure relaxation"
+  },
+  "INCAR Band Structure": {
+    "prefix": "bands",
+    "body": [
+      "# INCAR for band structure calculation",
+      "ENCUT = ${1:400}",
+      "ISMEAR = ${2:0}",
+      "SIGMA = ${3:0.1}",
+      "ALGO = ${4:Normal}",
+      "LORBIT = ${5:11}",
+      "NEDOS = ${6:1001}",
+      ""
+    ],
+    "description": "INCAR template for band structure calculation"
+  },
+  "INCAR MD": {
+    "prefix": "md",
+    "body": [
+      "# INCAR for molecular dynamics",
+      "ENCUT = ${1:400}",
+      "ISMEAR = ${2:0}",
+      "SIGMA = ${3:0.1}",
+      "EDIFF = ${4:1E-6}",
+      "IBRION = ${5:0}",
+      "NSW = ${6:1000}",
+      "POTIM = ${7:1.0}",
+      "TEBEG = ${8:300}",
+      "TEEND = ${9:300}",
+      "SMASS = ${10:-1}",
+      ""
+    ],
+    "description": "INCAR template for molecular dynamics"
+  },
+  "INCAR DFT+U": {
+    "prefix": "ldau",
+    "body": [
+      "# INCAR with DFT+U",
+      "ENCUT = ${1:400}",
+      "ISMEAR = ${2:0}",
+      "SIGMA = ${3:0.1}",
+      "LDAU = .TRUE.",
+      "LDAUTYPE = ${4:2}",
+      "LDAUL = ${5:-1 -1 2}",
+      "LDAUU = ${6:0 0 4.0}",
+      "LDAUJ = ${7:0 0 0}",
+      ""
+    ],
+    "description": "INCAR template with DFT+U corrections"
+  }
+}

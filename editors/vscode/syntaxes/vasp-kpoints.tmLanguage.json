@@ -1,0 +1,29 @@
+{
+  "name": "kpoints",
+  "scopeName": "source.vasp.kpoints",
+  "patterns": [
+    {
+      "include": "#comment"
+    },
+    {
+      "include": "#keyword"
+    },
+    {
+      "include": "#number"
+    }
+  ],
+  "repository": {
+    "comment": {
+      "match": "[#].*$",
+      "name": "comment.line.number-sign.vasp"
+    },
+    "keyword": {
+      "match": "\\b(Gamma|Monkhorst-Pack|Line-mode|Reciprocal|Cartesian|Automatic)\\b",
+      "name": "keyword.control.vasp"
+    },
+    "number": {
+      "match": "[-+]?[0-9]*\\.?[0-9]+([eE][-+]?[0-9]+)?",
+      "name": "constant.numeric.vasp"
+    }
+  }
+}

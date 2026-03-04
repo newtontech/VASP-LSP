@@ -1,0 +1,109 @@
+{
+  "name": "vasp-lsp",
+  "displayName": "VASP Language Support",
+  "description": "Language Server Protocol support for VASP input files (INCAR, POSCAR, KPOINTS)",
+  "version": "0.4.1",
+  "publisher": "newtontech",
+  "license": "MIT",
+  "engines": {
+    "vscode": "^1.74.0"
+  },
+  "categories": [
+    "Programming Languages",
+    "Linters",
+    "Formatters",
+    "Snippets"
+  ],
+  "keywords": [
+    "vasp",
+    "dft",
+    "quantum",
+    "chemistry",
+    "physics",
+    "materials"
+  ],
+  "activationEvents": [
+    "onLanguage:vasp-in",
+    "onLanguage:vasp-poscar",
+    "onLanguage:vasp-kpoints"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "languages": [
+      {
+        "id": "vasp-in",
+        "aliases": ["VASP INCAR", "INCAR"],
+        "extensions": [".incar"],
+        "filenames": ["INCAR", "INCAR.", "INCAR.vasp"],
+        "configuration": "./language-configuration.json"
+      },
+      {
+        "id": "vasp-poscar",
+        "aliases": ["VASP POSCAR", "POSCAR"],
+        "extensions": [".poscar",".contcar"],
+        "filenames": ["POSCAR", "POSCAR.", "CONTCAR", "CONTCAR."],
+        "configuration": "./language-configuration.json"
+      },
+      {
+        "id": "vasp-kpoints",
+        "aliases": ["VASP KPOINTS", "KPOINTS"],
+        "extensions": [".kpoints"],
+        "filenames": ["KPOINTS", "KPOINTS.", "KPOINTS.vasp"],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "vasp-in",
+        "scopeName": "source.vasp.in",
+        "path": "./syntaxes/vasp-in.tmLanguage.json"
+      },
+      {
+        "language": "vasp-poscar",
+        "scopeName": "source.vasp.poscar",
+        "path": "./syntaxes/vasp-poscar.tmLanguage.json"
+      },
+      {
+        "language": "vasp-kpoints",
+        "scopeName": "source.vasp.kpoints",
+        "path": "./syntaxes/vasp-kpoints.tmLanguage.json"
+      }
+    ],
+    "configuration": {
+      "type": "object",
+      "title": "VASP Language Server",
+      "properties": {
+        "vasp-lsp.serverPath": {
+          "type": "string",
+          "default": "vasp-lsp",
+          "description": "Path to the vasp-lsp executable"
+        },
+        "vasp-lsp.trace.server": {
+          "type": "string",
+          "enum": ["off", "messages", "verbose"],
+          "default": "off",
+          "description": "Trace communication between VS Code and the VASP language server"
+        }
+      }
+    },
+    "snippets": [
+      {
+        "language": "vasp-in",
+        "path": "./snippets/incar.json"
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/vscode": "^1.74.0",
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "vscode-languageclient": "^9.0.0"
+  }
+}

@@ -1,0 +1,25 @@
+{
+  "name": "incar",
+  "scopeName": "source.vasp.in",
+  "patterns": [
+    {
+      "include": "#comment"
+    },
+    {
+      "include": "#parameter"
+    }
+  ],
+  "repository": {
+    "comment": {
+      "match": "[#!].*$",
+      "name": "comment.line.number-sign.vasp"
+    },
+    "parameter": {
+      "match": "^\\s*([A-Za-z_][A-Za-z0-9_]*)\\s*=\\s*(.+?)$",
+      "captures": {
+        "1": { "name": "variable.parameter.vasp" },
+        "2": { "name": "constant.other.vasp" }
+      }
+    }
+  }
+}

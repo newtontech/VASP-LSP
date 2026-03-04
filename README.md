@@ -24,6 +24,10 @@ VASP-LSP provides intelligent code editing features for VASP calculation input f
 pip install vasp-lsp
 ```
 
+### VSCode Extension
+
+A VSCode extension is available in `editors/vscode/`. See the [extension README](editors/vscode/README.md) for installation instructions.
+
 ## Usage
 
 ### As a standalone server
