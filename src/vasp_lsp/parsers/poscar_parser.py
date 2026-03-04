@@ -117,7 +117,7 @@ class POSCARParser:
                 atom_types = [f"Type{i + 1}" for i in range(len(atom_counts))]
 
             # Check for selective dynamics line
-            selective_dynamics = None
+            selective_dynamics: Optional[list] = None
             coord_type_line = self.lines[line_idx].strip().lower()
             if coord_type_line.startswith("s"):
                 selective_dynamics = []

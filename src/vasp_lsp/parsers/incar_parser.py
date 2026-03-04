@@ -2,7 +2,7 @@
 
 import re
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 
 
 @dataclass
@@ -156,7 +156,7 @@ class INCARParser:
         # Handle array values (space-separated)
         if " " in value_str:
             parts = value_str.split()
-            parsed_parts = []
+            parsed_parts: list[Union[int, float, str]] = []
             for part in parts:
                 try:
                     parsed_parts.append(int(part))

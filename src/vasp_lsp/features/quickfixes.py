@@ -341,7 +341,7 @@ class QuickFixesProvider:
 
         # Simple similarity check: count matching characters
         best_match = None
-        best_score = 0
+        best_score: float = 0.0
 
         for valid_tag in INCAR_TAGS.keys():
             # Calculate simple similarity
