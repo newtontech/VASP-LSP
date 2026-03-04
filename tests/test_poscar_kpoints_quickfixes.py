@@ -1,6 +1,5 @@
 """Tests for POSCAR and KPOINTS quick fixes."""
 
-import pytest
 from lsprotocol.types import Diagnostic, Position, Range
 
 from vasp_lsp.features.quickfixes import QuickFixesProvider
@@ -391,34 +390,34 @@ class TestQuickFixesEdgeCaseCoverage:
     def test_scale_value_error_returns_none(self):
         """Test that ValueError in scale parsing returns None."""
         provider = QuickFixesProvider()
-        
+
         # Directly test with invalid line
         lines = ["header", "invalid", "more"]
         diagnostic = Diagnostic(
             range=Range(start=Position(line=1, character=0), end=Position(line=1, character=5)),
             message="Negative scale factor detected.",
         )
-        
+
         # Create a mock parser
         class MockParser:
             pass
-        
+
         action = provider._create_fix_negative_scale_action(lines, diagnostic, MockParser())
         assert action is None
 
     def test_normalize_weights_empty_lines(self):
         """Test normalize weights with short lines list."""
         provider = QuickFixesProvider()
-        
+
         # Create a mock result with weights
         class MockResult:
             weights = [0.3, 0.3]
-        
+
         lines = ["short", "lines"]  # Too short for line_num = 3
         diagnostic = Diagnostic(
             range=Range(start=Position(line=0, character=0), end=Position(line=0, character=10)),
             message="K-point weights sum to 0.600",
         )
-        
+
         action = provider._create_normalize_weights_action(lines, diagnostic, MockResult())
         assert action is None

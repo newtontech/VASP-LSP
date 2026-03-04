@@ -1,6 +1,5 @@
 """Tests for POSCAR and KPOINTS diagnostics coverage."""
 
-import pytest
 from vasp_lsp.features.diagnostics import DiagnosticsProvider
 
 

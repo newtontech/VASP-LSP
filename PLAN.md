@@ -134,3 +134,32 @@ All modules at 100%:
   - Added _create_wrap_coordinates_action helper
   - Added _create_fix_grid_action helper
   - Added _create_normalize_weights_action helper
+
+## Version 0.4.4 (2026-03-04) - Current Cron Session
+
+### New Features
+- ✅ Added comprehensive documentation
+  - Created CHANGELOG.md with complete version history
+  - Created docs/user-guide.md with installation and usage guide
+- ✅ All LSP features fully implemented and tested
+  - INCAR, POSCAR, KPOINTS parsers complete
+  - Completion, Hover, Diagnostics, Formatting, Quick Fixes all working
+
+### Tests
+- Total tests: 450
+- Coverage: 100% (1178/1178 statements covered)
+- All tests passing
+
+### Documentation
+- README.md updated with latest features
+- CHANGELOG.md added for version tracking
+- docs/user-guide.md added for user documentation
+- docs/architecture.md for developer documentation
+
+### Summary
+- All development tasks completed
+- GitHub issues: None (repository has issues disabled)
+- PRs: None pending
+- Code quality: All Ruff lint checks pass
+- Test coverage: 100%
+- Ready for release
