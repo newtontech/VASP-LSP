@@ -372,7 +372,7 @@ class QuickFixesProvider:
 
         actions = []
         parser = POSCARParser(content)
-        result = parser.parse()
+        parser.parse()
         lines = content.split("\n")
 
         for diagnostic in diagnostics:
@@ -563,11 +563,12 @@ class QuickFixesProvider:
                 if len(parts) >= 4:
                     # Replace the weight (4th column)
                     try:
-                        old_weight = float(parts[3])
+                        # Validate that parts[3] is a valid float
+                        float(parts[3])
                         new_line = line.replace(parts[3], f"{weight:.6f}")
                         actions.append(
                             CodeAction(
-                                title=f"Normalize k-point weights (sum=1.0)",
+                                title="Normalize k-point weights (sum=1.0)",
                                 kind=CodeActionKind.QuickFix,
                                 diagnostics=[diagnostic],
                                 edit=WorkspaceEdit(
