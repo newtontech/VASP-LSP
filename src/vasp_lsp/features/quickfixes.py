@@ -368,12 +368,230 @@ class QuickFixesProvider:
         self, content: str, diagnostics: List[Diagnostic], range: Range
     ) -> List[CodeAction]:
         """Get code actions for POSCAR files."""
-        # TODO: Implement POSCAR quick fixes
-        return []
+        from ..parsers.poscar_parser import POSCARParser
+
+        actions = []
+        parser = POSCARParser(content)
+        result = parser.parse()
+        lines = content.split("\n")
+
+        for diagnostic in diagnostics:
+            message = diagnostic.message.lower()
+
+            # Fix 1: Fix negative scale factor
+            if "negative scale factor" in message:
+                action = self._create_fix_negative_scale_action(
+                    lines, diagnostic, parser
+                )
+                if action:
+                    actions.append(action)
+
+            # Fix 2: Wrap out-of-range direct coordinates
+            if "outside typical range" in message:
+                action = self._create_wrap_coordinates_action(lines, diagnostic)
+                if action:
+                    actions.append(action)
+
+        return actions
 
     def _get_kpoints_code_actions(
         self, content: str, diagnostics: List[Diagnostic], range: Range
     ) -> List[CodeAction]:
         """Get code actions for KPOINTS files."""
-        # TODO: Implement KPOINTS quick fixes
-        return []
+        from ..parsers.kpoints_parser import KPOINTSParser
+
+        actions = []
+        parser = KPOINTSParser(content)
+        result = parser.parse()
+        lines = content.split("\n")
+
+        for diagnostic in diagnostics:
+            message = diagnostic.message.lower()
+
+            # Fix 1: Fix non-positive grid values
+            if "not positive" in message and "grid" in message:
+                action = self._create_fix_grid_action(lines, diagnostic, result)
+                if action:
+                    actions.append(action)
+
+            # Fix 2: Normalize k-point weights
+            if "weights sum" in message:
+                action = self._create_normalize_weights_action(
+                    lines, diagnostic, result
+                )
+                if action:
+                    actions.append(action)
+
+        return actions
+
+    def _create_fix_negative_scale_action(
+        self, lines: List[str], diagnostic: Diagnostic, parser
+    ) -> Optional[CodeAction]:
+        """Create action to fix negative scale factor."""
+        # Scale factor is on line 1 (index 1)
+        line_num = 1
+        line = lines[line_num]
+
+        # Extract the value and make it positive
+        try:
+            scale = float(line.strip())
+            new_scale = abs(scale)
+        except ValueError:
+            return None
+
+        return CodeAction(
+            title=f"Change scale factor to {new_scale}",
+            kind=CodeActionKind.QuickFix,
+            diagnostics=[diagnostic],
+            edit=WorkspaceEdit(
+                changes={
+                    "document": [
+                        TextEdit(
+                            range=Range(
+                                start=Position(line=line_num, character=0),
+                                end=Position(line=line_num, character=len(line)),
+                            ),
+                            new_text=f"{new_scale}",
+                        )
+                    ]
+                }
+            ),
+        )
+
+    def _create_wrap_coordinates_action(
+        self, lines: List[str], diagnostic: Diagnostic
+    ) -> Optional[CodeAction]:
+        """Create action to wrap coordinates to [0, 1] range."""
+        line_num = diagnostic.range.start.line
+        line = lines[line_num]
+        parts = line.strip().split()
+
+        if len(parts) < 3:
+            return None
+
+        try:
+            new_coords = []
+            for i in range(3):
+                val = float(parts[i])
+                # Wrap to [0, 1] range
+                wrapped = val - int(val)
+                if wrapped < 0:
+                    wrapped += 1.0
+                new_coords.append(f"{wrapped:.6f}")
+        except ValueError:
+            return None
+
+        new_line = " ".join(new_coords)
+        if len(parts) > 3:
+            new_line += " " + " ".join(parts[3:])
+
+        return CodeAction(
+            title="Wrap coordinates to [0, 1] range",
+            kind=CodeActionKind.QuickFix,
+            diagnostics=[diagnostic],
+            edit=WorkspaceEdit(
+                changes={
+                    "document": [
+                        TextEdit(
+                            range=Range(
+                                start=Position(line=line_num, character=0),
+                                end=Position(line=line_num, character=len(line)),
+                            ),
+                            new_text=new_line,
+                        )
+                    ]
+                }
+            ),
+        )
+
+    def _create_fix_grid_action(
+        self, lines: List[str], diagnostic: Diagnostic, result
+    ) -> Optional[CodeAction]:
+        """Create action to fix non-positive grid values."""
+        if not result or not result.grid:
+            return None
+
+        line_num = 2  # Grid line
+        line = lines[line_num]
+
+        # Fix grid values to be at least 1
+        new_grid = [max(1, g) for g in result.grid]
+        new_line = " ".join(str(g) for g in new_grid)
+
+        return CodeAction(
+            title=f"Set grid to {' '.join(str(g) for g in new_grid)}",
+            kind=CodeActionKind.QuickFix,
+            diagnostics=[diagnostic],
+            edit=WorkspaceEdit(
+                changes={
+                    "document": [
+                        TextEdit(
+                            range=Range(
+                                start=Position(line=line_num, character=0),
+                                end=Position(line=line_num, character=len(line)),
+                            ),
+                            new_text=new_line,
+                        )
+                    ]
+                }
+            ),
+        )
+
+    def _create_normalize_weights_action(
+        self, lines: List[str], diagnostic: Diagnostic, result
+    ) -> Optional[CodeAction]:
+        """Create action to normalize k-point weights to sum to 1.0."""
+        if not result or not result.weights:
+            return None
+
+        total_weight = sum(result.weights)
+        if total_weight == 0:
+            return None
+
+        # Normalize weights
+        normalized = [w / total_weight for w in result.weights]
+
+        # Find the lines with k-point weights
+        actions = []
+        for i, weight in enumerate(normalized):
+            # Line numbers for explicit k-points start after header
+            # This is approximate; actual line depends on file format
+            line_num = 3 + i
+            if line_num < len(lines):
+                line = lines[line_num]
+                parts = line.strip().split()
+                if len(parts) >= 4:
+                    # Replace the weight (4th column)
+                    try:
+                        old_weight = float(parts[3])
+                        new_line = line.replace(parts[3], f"{weight:.6f}")
+                        actions.append(
+                            CodeAction(
+                                title=f"Normalize k-point weights (sum=1.0)",
+                                kind=CodeActionKind.QuickFix,
+                                diagnostics=[diagnostic],
+                                edit=WorkspaceEdit(
+                                    changes={
+                                        "document": [
+                                            TextEdit(
+                                                range=Range(
+                                                    start=Position(
+                                                        line=line_num, character=0
+                                                    ),
+                                                    end=Position(
+                                                        line=line_num,
+                                                        character=len(line),
+                                                    ),
+                                                ),
+                                                new_text=new_line,
+                                            )
+                                        ]
+                                    }
+                                ),
+                            )
+                        )
+                        break  # Only add one action
+                    except ValueError:
+                        continue
+
+        return actions[0] if actions else None
