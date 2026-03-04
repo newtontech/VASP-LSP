@@ -236,3 +236,102 @@ class TestKPOINTSQuickFixes:
             ),
         )
         assert actions == []
+
+
+class TestQuickFixesCoverage:
+    """Additional tests for 100% coverage."""
+
+    def test_normalize_weights_zero_total(self, quickfixes):
+        """Test _create_normalize_weights_action with zero total weight."""
+        from unittest.mock import MagicMock
+
+        diagnostic = Diagnostic(
+            range=Range(
+                start=Position(line=0, character=0), end=Position(line=0, character=1)
+            ),
+            message="weights sum",
+            source="vasp-lsp",
+        )
+
+        # Create a mock result with weights summing to 0
+        result = MagicMock()
+        result.weights = [0.0, 0.0, 0.0]
+
+        lines = ["Test", "3", "Reciprocal"]
+        action = quickfixes._create_normalize_weights_action(lines, diagnostic, result)
+
+        # Should return None when total weight is 0
+        assert action is None
+
+    def test_normalize_weights_empty_result(self, quickfixes):
+        """Test _create_normalize_weights_action with empty result."""
+        from unittest.mock import MagicMock
+
+        diagnostic = Diagnostic(
+            range=Range(
+                start=Position(line=0, character=0), end=Position(line=0, character=1)
+            ),
+            message="weights sum",
+            source="vasp-lsp",
+        )
+
+        # Test with None result
+        action = quickfixes._create_normalize_weights_action(
+            ["line"], diagnostic, None
+        )
+        assert action is None
+
+        # Test with result but no weights
+        result = MagicMock()
+        result.weights = None
+        action = quickfixes._create_normalize_weights_action(
+            ["line"], diagnostic, result
+        )
+        assert action is None
+
+    def test_normalize_weights_no_valid_lines(self, quickfixes):
+        """Test _create_normalize_weights_action with no valid lines to fix."""
+        from unittest.mock import MagicMock
+
+        diagnostic = Diagnostic(
+            range=Range(
+                start=Position(line=0, character=0), end=Position(line=0, character=1)
+            ),
+            message="weights sum",
+            source="vasp-lsp",
+        )
+
+        # Create a mock result with valid weights but short lines list
+        result = MagicMock()
+        result.weights = [0.5, 0.5]
+
+        # Lines list is too short for line_num = 3 + i
+        lines = ["Test", "2"]
+        action = quickfixes._create_normalize_weights_action(lines, diagnostic, result)
+
+        # Should return None when no valid lines found
+        assert action is None
+
+    def test_normalize_weights_value_error(self, quickfixes):
+        """Test _create_normalize_weights_action when parts[3] is not a float."""
+        from unittest.mock import MagicMock
+
+        diagnostic = Diagnostic(
+            range=Range(
+                start=Position(line=0, character=0), end=Position(line=0, character=1)
+            ),
+            message="weights sum",
+            source="vasp-lsp",
+        )
+
+        # Create a mock result with valid weights
+        result = MagicMock()
+        result.weights = [0.5, 0.5]
+
+        # Line 3 has parts[3] that is not a valid float (will trigger ValueError)
+        lines = ["Test", "2", "Reciprocal", "0.0 0.0 0.0 invalid"]
+        action = quickfixes._create_normalize_weights_action(lines, diagnostic, result)
+
+        # Should skip the invalid line and check next, but since we break after first,
+        # it should return None when no valid action is created
+        assert action is None
