@@ -319,10 +319,164 @@ class DiagnosticsProvider:
 
     def _get_poscar_diagnostics(self, content: str) -> List[Diagnostic]:
         """Get diagnostics for POSCAR files."""
-        # TODO: Implement POSCAR validation
-        return []
+        from ..parsers.poscar_parser import POSCARParser
+
+        diagnostics = []
+        parser = POSCARParser(content)
+        result = parser.parse()
+
+        # Report parse errors
+        for error in parser.get_errors():
+            severity = (
+                DiagnosticSeverity.Error
+                if error["severity"] == "error"
+                else DiagnosticSeverity.Warning
+            )
+            diagnostics.append(
+                Diagnostic(
+                    range=Range(
+                        start=Position(
+                            line=error["line"] - 1, character=error.get("column", 0)
+                        ),
+                        end=Position(
+                            line=error["line"] - 1, character=error.get("column", 0) + 1
+                        ),
+                    ),
+                    message=error["message"],
+                    severity=severity,
+                    source="vasp-lsp",
+                )
+            )
+
+        # Additional validation if parsing succeeded
+        if result:
+            # Check for negative scale factor
+            if result.scale_factor < 0:
+                diagnostics.append(
+                    Diagnostic(
+                        range=Range(
+                            start=Position(line=1, character=0),
+                            end=Position(line=1, character=20),
+                        ),
+                        message="Negative scale factor detected. This inverts the lattice.",
+                        severity=DiagnosticSeverity.Warning,
+                        source="vasp-lsp",
+                    )
+                )
+
+            # Check for zero atom counts
+            total_atoms = sum(result.atom_counts)
+            if total_atoms == 0:
+                diagnostics.append(
+                    Diagnostic(
+                        range=Range(
+                            start=Position(line=5, character=0),
+                            end=Position(line=5, character=50),
+                        ),
+                        message="No atoms specified in POSCAR.",
+                        severity=DiagnosticSeverity.Error,
+                        source="vasp-lsp",
+                    )
+                )
+
+            # Check coordinate ranges for direct coordinates
+            if result.coordinate_type == "Direct":
+                for i, coord in enumerate(result.coordinates):
+                    for j, val in enumerate(coord):
+                        if val < -0.5 or val > 1.5:
+                            line_num = 8 + i  # Approximate line number
+                            diagnostics.append(
+                                Diagnostic(
+                                    range=Range(
+                                        start=Position(line=line_num, character=0),
+                                        end=Position(line=line_num, character=40),
+                                    ),
+                                    message=f"Direct coordinate {val:.3f} is outside typical range [0, 1].",
+                                    severity=DiagnosticSeverity.Information,
+                                    source="vasp-lsp",
+                                )
+                            )
+                            break
+
+        return diagnostics
 
     def _get_kpoints_diagnostics(self, content: str) -> List[Diagnostic]:
         """Get diagnostics for KPOINTS files."""
-        # TODO: Implement KPOINTS validation
-        return []
+        from ..parsers.kpoints_parser import KPOINTSParser
+
+        diagnostics = []
+        parser = KPOINTSParser(content)
+        result = parser.parse()
+
+        # Report parse errors
+        for error in parser.get_errors():
+            severity = (
+                DiagnosticSeverity.Error
+                if error["severity"] == "error"
+                else DiagnosticSeverity.Warning
+            )
+            diagnostics.append(
+                Diagnostic(
+                    range=Range(
+                        start=Position(
+                            line=error["line"] - 1, character=error.get("column", 0)
+                        ),
+                        end=Position(
+                            line=error["line"] - 1, character=error.get("column", 0) + 1
+                        ),
+                    ),
+                    message=error["message"],
+                    severity=severity,
+                    source="vasp-lsp",
+                )
+            )
+
+        # Additional validation if parsing succeeded
+        if result and result.grid:
+            # Check for zero or negative grid values
+            for i, grid_val in enumerate(result.grid):
+                if grid_val <= 0:
+                    diagnostics.append(
+                        Diagnostic(
+                            range=Range(
+                                start=Position(line=2, character=0),
+                                end=Position(line=2, character=30),
+                            ),
+                            message=f"K-point grid value {grid_val} is not positive.",
+                            severity=DiagnosticSeverity.Error,
+                            source="vasp-lsp",
+                        )
+                    )
+                    break
+
+            # Check for very sparse grids
+            if all(g < 2 for g in result.grid):
+                diagnostics.append(
+                    Diagnostic(
+                        range=Range(
+                            start=Position(line=2, character=0),
+                            end=Position(line=2, character=30),
+                        ),
+                        message="K-point grid is very sparse (all values < 2).",
+                        severity=DiagnosticSeverity.Warning,
+                        source="vasp-lsp",
+                    )
+                )
+
+        # Check explicit k-point weights sum
+        if result and result.weights:
+            total_weight = sum(result.weights)
+            if abs(total_weight - 1.0) > 0.01 and total_weight > 0:
+                diagnostics.append(
+                    Diagnostic(
+                        range=Range(
+                            start=Position(line=3, character=0),
+                            end=Position(line=3, character=30),
+                        ),
+                        message=f"K-point weights sum to {total_weight:.3f} (expected ~1.0).",
+                        severity=DiagnosticSeverity.Information,
+                        source="vasp-lsp",
+                    )
+                )
+
+        return diagnostics

@@ -23,7 +23,7 @@ This is the development plan for vasp-lsp - a Language Server Protocol implement
 ## Testing
 - Run tests: \`pytest tests/\`
 - Check coverage: \`pytest --cov\`
-- Current status: 416 tests, 100% coverage (2026-03-04)
+- Current status: 428 tests, 100% coverage (2026-03-04)
 
 ## Coverage Analysis (2026-03-04)
 All modules at 100%:
@@ -81,7 +81,27 @@ All modules at 100%:
 - v0.1.0: Initial release with core features
 - v0.2.0: Added formatting support
 - v0.4.0: Achieved 100% test coverage, code cleanup
-- v0.4.1: Fixed all Ruff lint errors, improved code quality (current)
+- v0.4.1: Fixed all Ruff lint errors, improved code quality
+- v0.4.2: Added POSCAR and KPOINTS diagnostics (current)
+
+## Version 0.4.2 (2026-03-04)
+
+### New Features
+- ✅ Implemented POSCAR file diagnostics
+  - Parse error reporting
+  - Negative scale factor detection
+  - Zero atoms validation
+  - Out-of-range coordinate warnings for Direct coordinates
+- ✅ Implemented KPOINTS file diagnostics
+  - Parse error reporting
+  - Non-positive grid value detection
+  - Sparse grid warnings
+  - K-point weights sum validation
+
+### Tests
+- Added 12 new tests for POSCAR/KPOINTS diagnostics
+- Total tests: 428 (up from 416)
+- Coverage maintained at 100%
 
 ## VSCode Extension (2026-03-04)
 - ✅ Created VSCode extension configuration in editors/vscode/
