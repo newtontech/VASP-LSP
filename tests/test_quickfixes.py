@@ -276,9 +276,7 @@ class TestQuickFixesCoverage:
         )
 
         # Test with None result
-        action = quickfixes._create_normalize_weights_action(
-            ["line"], diagnostic, None
-        )
+        action = quickfixes._create_normalize_weights_action(["line"], diagnostic, None)
         assert action is None
 
         # Test with result but no weights
