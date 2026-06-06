@@ -41,9 +41,7 @@ Reciprocal
             errors = parser.get_errors()
             assert len(errors) > 0
             # The error could be about k-point line format or missing k-points
-            assert (
-                "K-point" in errors[0]["message"] or "Expected" in errors[0]["message"]
-            )
+            assert "K-point" in errors[0]["message"] or "Expected" in errors[0]["message"]
         else:
             # Or might parse what's available
             assert len(data.kpoints) <= 5

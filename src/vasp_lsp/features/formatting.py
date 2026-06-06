@@ -236,9 +236,7 @@ class FormattingProvider:
                 if len(parts) >= 3:
                     try:
                         v = [float(p) for p in parts[:3]]
-                        formatted_lines.append(
-                            f"     {v[0]:.10f}    {v[1]:.10f}    {v[2]:.10f}"
-                        )
+                        formatted_lines.append(f"     {v[0]:.10f}    {v[1]:.10f}    {v[2]:.10f}")
                     except ValueError:
                         formatted_lines.append(lines[i])
                 else:

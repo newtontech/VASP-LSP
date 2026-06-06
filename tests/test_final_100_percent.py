@@ -65,9 +65,7 @@ class TestPoscarQuickFixes:
         from lsprotocol.types import Diagnostic, Position, Range
 
         diagnostic = Diagnostic(
-            range=Range(
-                start=Position(line=0, character=0), end=Position(line=0, character=10)
-            ),
+            range=Range(start=Position(line=0, character=0), end=Position(line=0, character=10)),
             message="Missing cell vectors",
             severity=1,
         )
@@ -77,9 +75,7 @@ class TestPoscarQuickFixes:
 0.0 0.0 0.0
 0.0 0.0 0.0
 """
-        actions = provider._get_poscar_code_actions(
-            content, [diagnostic], diagnostic.range
-        )
+        actions = provider._get_poscar_code_actions(content, [diagnostic], diagnostic.range)
         # Should return code actions now (implementation needed)
         assert isinstance(actions, list)
 
@@ -89,9 +85,7 @@ class TestPoscarQuickFixes:
         from lsprotocol.types import Diagnostic, Position, Range
 
         diagnostic = Diagnostic(
-            range=Range(
-                start=Position(line=5, character=0), end=Position(line=5, character=10)
-            ),
+            range=Range(start=Position(line=5, character=0), end=Position(line=5, character=10)),
             message="Missing coordinates",
             severity=1,
         )
@@ -103,9 +97,7 @@ class TestPoscarQuickFixes:
 Si
 1
 """
-        actions = provider._get_poscar_code_actions(
-            content, [diagnostic], diagnostic.range
-        )
+        actions = provider._get_poscar_code_actions(content, [diagnostic], diagnostic.range)
         assert isinstance(actions, list)
 
     def test_poscar_quick_fixes_no_diagnostics(self):
@@ -113,9 +105,7 @@ Si
         provider = QuickFixesProvider()
         from lsprotocol.types import Position, Range
 
-        range_obj = Range(
-            start=Position(line=0, character=0), end=Position(line=0, character=10)
-        )
+        range_obj = Range(start=Position(line=0, character=0), end=Position(line=0, character=10))
         content = """POSCAR
 1.0
 1.0 0.0 0.0
@@ -161,9 +151,7 @@ Si
 1
 Direct
 99.0 0.0 0.0"""
-        actions = provider._get_poscar_code_actions(
-            content, diagnostics, diagnostics[0].range
-        )
+        actions = provider._get_poscar_code_actions(content, diagnostics, diagnostics[0].range)
         assert isinstance(actions, list)
 
 

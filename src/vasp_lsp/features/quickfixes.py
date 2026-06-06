@@ -119,9 +119,7 @@ class QuickFixesProvider:
             if "ldau" in message and "ldautype" in message:
                 fix_key = "add_ldautype"
                 if fix_key not in added_fixes:
-                    action = self._create_add_ldau_param_action(
-                        lines, diagnostic, "LDAUTYPE", "2"
-                    )
+                    action = self._create_add_ldau_param_action(lines, diagnostic, "LDAUTYPE", "2")
                     if action:
                         actions.append(action)
                         added_fixes.add(fix_key)
@@ -139,9 +137,7 @@ class QuickFixesProvider:
             if "ldau" in message and "ldauu" in message:
                 fix_key = "add_ldauu"
                 if fix_key not in added_fixes:
-                    action = self._create_add_ldau_param_action(
-                        lines, diagnostic, "LDAUU", "0 0 0"
-                    )
+                    action = self._create_add_ldau_param_action(lines, diagnostic, "LDAUU", "0 0 0")
                     if action:
                         actions.append(action)
                         added_fixes.add(fix_key)
@@ -296,6 +292,7 @@ class QuickFixesProvider:
 
         # Find closest match
         upper_tag = tag_name.upper()
+        fixed_tag: Optional[str]
         if upper_tag in typo_fixes:
             fixed_tag = typo_fixes[upper_tag]
         else:
@@ -380,9 +377,7 @@ class QuickFixesProvider:
 
             # Fix 1: Fix negative scale factor
             if "negative scale factor" in message:
-                action = self._create_fix_negative_scale_action(
-                    lines, diagnostic, parser
-                )
+                action = self._create_fix_negative_scale_action(lines, diagnostic, parser)
                 if action:
                     actions.append(action)
 
@@ -416,9 +411,7 @@ class QuickFixesProvider:
 
             # Fix 2: Normalize k-point weights
             if "weights sum" in message:
-                action = self._create_normalize_weights_action(
-                    lines, diagnostic, result
-                )
+                action = self._create_normalize_weights_action(lines, diagnostic, result)
                 if action:
                     actions.append(action)
 
@@ -576,9 +569,7 @@ class QuickFixesProvider:
                                         "document": [
                                             TextEdit(
                                                 range=Range(
-                                                    start=Position(
-                                                        line=line_num, character=0
-                                                    ),
+                                                    start=Position(line=line_num, character=0),
                                                     end=Position(
                                                         line=line_num,
                                                         character=len(line),

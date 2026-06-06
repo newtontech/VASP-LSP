@@ -85,9 +85,7 @@ class TestQuickFixesCoverage:
             content,
             "file://INCAR",
             diagnostics,
-            Range(
-                start=Position(line=0, character=0), end=Position(line=0, character=14)
-            ),
+            Range(start=Position(line=0, character=0), end=Position(line=0, character=14)),
         )
 
         # Should have LDAUTYPE fix
@@ -112,9 +110,7 @@ class TestQuickFixesCoverage:
             content,
             "file://INCAR",
             diagnostics,
-            Range(
-                start=Position(line=0, character=0), end=Position(line=0, character=14)
-            ),
+            Range(start=Position(line=0, character=0), end=Position(line=0, character=14)),
         )
 
         # Check for any LDAU-related fixes
@@ -139,9 +135,7 @@ class TestQuickFixesCoverage:
             content,
             "file://INCAR",
             diagnostics,
-            Range(
-                start=Position(line=0, character=0), end=Position(line=0, character=18)
-            ),
+            Range(start=Position(line=0, character=0), end=Position(line=0, character=18)),
         )
 
         # When start_col is -1, should return None for that action
@@ -166,9 +160,7 @@ class TestQuickFixesCoverage:
             content,
             "file://INCAR",
             diagnostics,
-            Range(
-                start=Position(line=0, character=0), end=Position(line=0, character=10)
-            ),
+            Range(start=Position(line=0, character=0), end=Position(line=0, character=10)),
         )
 
         # Should suggest ENCUT as fix
@@ -193,9 +185,7 @@ class TestQuickFixesCoverage:
             content,
             "file://INCAR",
             diagnostics,
-            Range(
-                start=Position(line=0, character=0), end=Position(line=0, character=14)
-            ),
+            Range(start=Position(line=0, character=0), end=Position(line=0, character=14)),
         )
 
         ldaul_actions = [a for a in actions if "LDAUL" in a.title]
@@ -219,9 +209,7 @@ class TestQuickFixesCoverage:
             content,
             "file://INCAR",
             diagnostics,
-            Range(
-                start=Position(line=0, character=0), end=Position(line=0, character=14)
-            ),
+            Range(start=Position(line=0, character=0), end=Position(line=0, character=14)),
         )
 
         ldauu_actions = [a for a in actions if "LDAUU" in a.title]

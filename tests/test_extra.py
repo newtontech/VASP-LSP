@@ -63,10 +63,7 @@ class TestServerHandlersCoverage:
 
         text_document_did_open(params)
 
-        assert (
-            server.get_document_content("file:///test/POSCAR")
-            == "Test\n1.0\n1.0 0.0 0.0"
-        )
+        assert server.get_document_content("file:///test/POSCAR") == "Test\n1.0\n1.0 0.0 0.0"
 
     def test_text_document_did_open_kpoints(self):
         """Test document open handler for KPOINTS."""
@@ -79,10 +76,7 @@ class TestServerHandlersCoverage:
 
         text_document_did_open(params)
 
-        assert (
-            server.get_document_content("file:///test/KPOINTS")
-            == "Automatic\n0\nGamma\n4 4 4"
-        )
+        assert server.get_document_content("file:///test/KPOINTS") == "Automatic\n0\nGamma\n4 4 4"
 
     def test_text_document_did_change(self):
         """Test document change handler."""
@@ -459,9 +453,7 @@ class TestDiagnosticsProviderCoverage:
         diagnostics = provider.get_diagnostics(content, "file:///test/INCAR")
 
         assert isinstance(diagnostics, list)
-        conflict_warnings = [
-            d for d in diagnostics if "NPAR" in d.message or "NCORE" in d.message
-        ]
+        conflict_warnings = [d for d in diagnostics if "NPAR" in d.message or "NCORE" in d.message]
         assert len(conflict_warnings) > 0
 
     def test_diagnostics_ldau_missing_params(self):

@@ -33,9 +33,7 @@ class TestServerCoverage:
             with patch.object(test_server, "set_document_content"):
                 # Just verify no exception is raised
                 test_server.get_document_content(params.text_document.uri)
-                assert (
-                    test_server.get_document_content(params.text_document.uri) is None
-                )
+                assert test_server.get_document_content(params.text_document.uri) is None
 
     def test_formatting_no_content(self):
         """Test formatting when content is not cached (line 188-200)."""

@@ -39,9 +39,7 @@ class TestQuickFixesProvider:
             "content",
             "file:///unknown.txt",
             [],
-            Range(
-                start=Position(line=0, character=0), end=Position(line=0, character=1)
-            ),
+            Range(start=Position(line=0, character=0), end=Position(line=0, character=1)),
         )
         assert result == []
 
@@ -53,9 +51,7 @@ class TestINCARQuickFixes:
         """Test adding SIGMA when ISMEAR is set."""
         content = "ISMEAR = 0"
         diagnostic = Diagnostic(
-            range=Range(
-                start=Position(line=0, character=0), end=Position(line=0, character=10)
-            ),
+            range=Range(start=Position(line=0, character=0), end=Position(line=0, character=10)),
             message="ISMEAR >= 0 should have SIGMA set",
             source="vasp-lsp",
         )
@@ -64,9 +60,7 @@ class TestINCARQuickFixes:
             content,
             "file:///INCAR",
             [diagnostic],
-            Range(
-                start=Position(line=0, character=0), end=Position(line=0, character=10)
-            ),
+            Range(start=Position(line=0, character=0), end=Position(line=0, character=10)),
         )
 
         assert len(actions) > 0
@@ -76,9 +70,7 @@ class TestINCARQuickFixes:
         """Test adding MAGMOM when ISPIN=2."""
         content = "ISPIN = 2"
         diagnostic = Diagnostic(
-            range=Range(
-                start=Position(line=0, character=0), end=Position(line=0, character=9)
-            ),
+            range=Range(start=Position(line=0, character=0), end=Position(line=0, character=9)),
             message="ISPIN=2 should have MAGMOM set",
             source="vasp-lsp",
         )
@@ -87,9 +79,7 @@ class TestINCARQuickFixes:
             content,
             "file:///INCAR",
             [diagnostic],
-            Range(
-                start=Position(line=0, character=0), end=Position(line=0, character=9)
-            ),
+            Range(start=Position(line=0, character=0), end=Position(line=0, character=9)),
         )
 
         assert len(actions) > 0
@@ -122,9 +112,7 @@ class TestINCARQuickFixes:
             content,
             "file:///INCAR",
             diagnostics,
-            Range(
-                start=Position(line=0, character=0), end=Position(line=0, character=13)
-            ),
+            Range(start=Position(line=0, character=0), end=Position(line=0, character=13)),
         )
 
         assert len(actions) >= 2
@@ -136,9 +124,7 @@ class TestINCARQuickFixes:
         content = """NCORE = 4
 NPAR = 2"""
         diagnostic = Diagnostic(
-            range=Range(
-                start=Position(line=1, character=0), end=Position(line=1, character=8)
-            ),
+            range=Range(start=Position(line=1, character=0), end=Position(line=1, character=8)),
             message="NPAR and NCORE should not be set together",
             source="vasp-lsp",
         )
@@ -147,9 +133,7 @@ NPAR = 2"""
             content,
             "file:///INCAR",
             [diagnostic],
-            Range(
-                start=Position(line=1, character=0), end=Position(line=1, character=8)
-            ),
+            Range(start=Position(line=1, character=0), end=Position(line=1, character=8)),
         )
 
         assert len(actions) > 0
@@ -159,9 +143,7 @@ NPAR = 2"""
         """Test fixing common typos."""
         content = "ENCUTT = 500"
         diagnostic = Diagnostic(
-            range=Range(
-                start=Position(line=0, character=0), end=Position(line=0, character=6)
-            ),
+            range=Range(start=Position(line=0, character=0), end=Position(line=0, character=6)),
             message="Unknown INCAR tag: ENCUTT",
             source="vasp-lsp",
         )
@@ -170,9 +152,7 @@ NPAR = 2"""
             content,
             "file:///INCAR",
             [diagnostic],
-            Range(
-                start=Position(line=0, character=0), end=Position(line=0, character=6)
-            ),
+            Range(start=Position(line=0, character=0), end=Position(line=0, character=6)),
         )
 
         assert len(actions) > 0
@@ -215,9 +195,7 @@ class TestPOSCARQuickFixes:
             "POSCAR content",
             "file:///POSCAR",
             [],
-            Range(
-                start=Position(line=0, character=0), end=Position(line=0, character=1)
-            ),
+            Range(start=Position(line=0, character=0), end=Position(line=0, character=1)),
         )
         assert actions == []
 
@@ -231,9 +209,7 @@ class TestKPOINTSQuickFixes:
             "KPOINTS content",
             "file:///KPOINTS",
             [],
-            Range(
-                start=Position(line=0, character=0), end=Position(line=0, character=1)
-            ),
+            Range(start=Position(line=0, character=0), end=Position(line=0, character=1)),
         )
         assert actions == []
 
@@ -246,9 +222,7 @@ class TestQuickFixesCoverage:
         from unittest.mock import MagicMock
 
         diagnostic = Diagnostic(
-            range=Range(
-                start=Position(line=0, character=0), end=Position(line=0, character=1)
-            ),
+            range=Range(start=Position(line=0, character=0), end=Position(line=0, character=1)),
             message="weights sum",
             source="vasp-lsp",
         )
@@ -268,9 +242,7 @@ class TestQuickFixesCoverage:
         from unittest.mock import MagicMock
 
         diagnostic = Diagnostic(
-            range=Range(
-                start=Position(line=0, character=0), end=Position(line=0, character=1)
-            ),
+            range=Range(start=Position(line=0, character=0), end=Position(line=0, character=1)),
             message="weights sum",
             source="vasp-lsp",
         )
@@ -282,9 +254,7 @@ class TestQuickFixesCoverage:
         # Test with result but no weights
         result = MagicMock()
         result.weights = None
-        action = quickfixes._create_normalize_weights_action(
-            ["line"], diagnostic, result
-        )
+        action = quickfixes._create_normalize_weights_action(["line"], diagnostic, result)
         assert action is None
 
     def test_normalize_weights_no_valid_lines(self, quickfixes):
@@ -292,9 +262,7 @@ class TestQuickFixesCoverage:
         from unittest.mock import MagicMock
 
         diagnostic = Diagnostic(
-            range=Range(
-                start=Position(line=0, character=0), end=Position(line=0, character=1)
-            ),
+            range=Range(start=Position(line=0, character=0), end=Position(line=0, character=1)),
             message="weights sum",
             source="vasp-lsp",
         )
@@ -315,9 +283,7 @@ class TestQuickFixesCoverage:
         from unittest.mock import MagicMock
 
         diagnostic = Diagnostic(
-            range=Range(
-                start=Position(line=0, character=0), end=Position(line=0, character=1)
-            ),
+            range=Range(start=Position(line=0, character=0), end=Position(line=0, character=1)),
             message="weights sum",
             source="vasp-lsp",
         )

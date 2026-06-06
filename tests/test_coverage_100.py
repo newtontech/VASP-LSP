@@ -107,9 +107,7 @@ class TestINCARParserFullCoverage:
         parser = INCARParser(content)
 
         # Mock _parse_line to raise an exception
-        with patch.object(
-            parser, "_parse_line", side_effect=RuntimeError("Test error")
-        ):
+        with patch.object(parser, "_parse_line", side_effect=RuntimeError("Test error")):
             _ = parser.parse()
 
             # Should have caught the exception

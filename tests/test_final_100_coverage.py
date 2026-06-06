@@ -75,14 +75,10 @@ class TestFinalQuickFixesCoverage:
         provider = QuickFixesProvider()
         lines = ["TOTALLYWRONGTAG = 123"]
         diagnostic = Diagnostic(
-            range=Range(
-                start=Position(line=0, character=0), end=Position(line=0, character=15)
-            ),
+            range=Range(start=Position(line=0, character=0), end=Position(line=0, character=15)),
             message="Unknown INCAR tag: TOTALLYWRONGTAG",
         )
-        result = provider._create_fix_typo_action(
-            lines, diagnostic, "TOTALLYWRONGTAG = 123"
-        )
+        result = provider._create_fix_typo_action(lines, diagnostic, "TOTALLYWRONGTAG = 123")
         # Should return None since no similar valid tag exists
         assert result is None
 
@@ -102,9 +98,7 @@ class TestFinalServerCoverage:
 
         params = CodeActionParams(
             text_document=TextDocumentIdentifier(uri=uri),
-            range=Range(
-                start=Position(line=0, character=0), end=Position(line=2, character=0)
-            ),
+            range=Range(start=Position(line=0, character=0), end=Position(line=2, character=0)),
             context=MagicMock(),
         )
 

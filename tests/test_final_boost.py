@@ -491,9 +491,7 @@ class TestCompletionProviderEdgeCases:
             position=Position(line=1, character=0),
         )
         content = "Comment\n\n"
-        result = self.completion.get_completions(
-            params, content, "file:///test/KPOINTS"
-        )
+        result = self.completion.get_completions(params, content, "file:///test/KPOINTS")
 
         assert result.is_incomplete is False
         assert len(result.items) > 0
@@ -505,9 +503,7 @@ class TestCompletionProviderEdgeCases:
             position=Position(line=0, character=0),
         )
         content = "Some content"
-        result = self.completion.get_completions(
-            params, content, "file:///test/UNKNOWN"
-        )
+        result = self.completion.get_completions(params, content, "file:///test/UNKNOWN")
 
         assert result.is_incomplete is False
         assert result.items == []

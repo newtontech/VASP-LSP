@@ -83,9 +83,7 @@ class CompletionProvider:
 
         return "UNKNOWN"
 
-    def _get_incar_completions(
-        self, line_prefix: str, current_line: str
-    ) -> List[CompletionItem]:
+    def _get_incar_completions(self, line_prefix: str, current_line: str) -> List[CompletionItem]:
         """Get completion items for INCAR files.
 
         Args:
@@ -117,9 +115,11 @@ class CompletionProvider:
                         label=tag_name,
                         kind=CompletionItemKind.Keyword,
                         detail=f"{tag.type} (default: {tag.default})",
-                        documentation=tag.description[:200] + "..."
-                        if len(tag.description) > 200
-                        else tag.description,
+                        documentation=(
+                            tag.description[:200] + "..."
+                            if len(tag.description) > 200
+                            else tag.description
+                        ),
                         insert_text=f"{tag_name} = ",
                         sort_text=tag_name,
                     )

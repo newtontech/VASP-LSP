@@ -23,15 +23,11 @@ Direct
 0.0 0.0 0.0
 """
         diagnostic = Diagnostic(
-            range=Range(
-                start=Position(line=1, character=0), end=Position(line=1, character=5)
-            ),
+            range=Range(start=Position(line=1, character=0), end=Position(line=1, character=5)),
             message="Negative scale factor detected. This inverts the lattice.",
         )
 
-        actions = provider._get_poscar_code_actions(
-            content, [diagnostic], diagnostic.range
-        )
+        actions = provider._get_poscar_code_actions(content, [diagnostic], diagnostic.range)
 
         assert len(actions) >= 1
         assert any("scale factor" in a.title.lower() for a in actions)
@@ -51,15 +47,11 @@ Direct
 0.0 0.0 0.0
 """
         diagnostic = Diagnostic(
-            range=Range(
-                start=Position(line=1, character=0), end=Position(line=1, character=5)
-            ),
+            range=Range(start=Position(line=1, character=0), end=Position(line=1, character=5)),
             message="Negative scale factor detected. This inverts the lattice.",
         )
 
-        actions = provider._get_poscar_code_actions(
-            content, [diagnostic], diagnostic.range
-        )
+        actions = provider._get_poscar_code_actions(content, [diagnostic], diagnostic.range)
 
         # Find the fix action
         fix_action = next((a for a in actions if "scale" in a.title.lower()), None)
@@ -81,15 +73,11 @@ Direct
 2.5 -0.5 1.5
 """
         diagnostic = Diagnostic(
-            range=Range(
-                start=Position(line=8, character=0), end=Position(line=8, character=20)
-            ),
+            range=Range(start=Position(line=8, character=0), end=Position(line=8, character=20)),
             message="Direct coordinate 2.500 is outside typical range [0, 1].",
         )
 
-        actions = provider._get_poscar_code_actions(
-            content, [diagnostic], diagnostic.range
-        )
+        actions = provider._get_poscar_code_actions(content, [diagnostic], diagnostic.range)
 
         assert len(actions) >= 1
         assert any("wrap" in a.title.lower() for a in actions)
@@ -111,9 +99,7 @@ Direct
         actions = provider._get_poscar_code_actions(
             content,
             [],
-            Range(
-                start=Position(line=0, character=0), end=Position(line=0, character=0)
-            ),
+            Range(start=Position(line=0, character=0), end=Position(line=0, character=0)),
         )
 
         assert actions == []
@@ -134,15 +120,11 @@ Direct
 2.5 -0.5 1.5 T T F
 """
         diagnostic = Diagnostic(
-            range=Range(
-                start=Position(line=9, character=0), end=Position(line=9, character=30)
-            ),
+            range=Range(start=Position(line=9, character=0), end=Position(line=9, character=30)),
             message="Direct coordinate 2.500 is outside typical range [0, 1].",
         )
 
-        actions = provider._get_poscar_code_actions(
-            content, [diagnostic], diagnostic.range
-        )
+        actions = provider._get_poscar_code_actions(content, [diagnostic], diagnostic.range)
 
         wrap_action = next((a for a in actions if "wrap" in a.title.lower()), None)
         assert wrap_action is not None
@@ -162,15 +144,11 @@ Direct
 invalid 0.0 0.0
 """
         diagnostic = Diagnostic(
-            range=Range(
-                start=Position(line=8, character=0), end=Position(line=8, character=20)
-            ),
+            range=Range(start=Position(line=8, character=0), end=Position(line=8, character=20)),
             message="Direct coordinate is outside typical range [0, 1].",
         )
 
-        actions = provider._get_poscar_code_actions(
-            content, [diagnostic], diagnostic.range
-        )
+        actions = provider._get_poscar_code_actions(content, [diagnostic], diagnostic.range)
 
         # Should not crash, may or may not have actions
         assert isinstance(actions, list)
@@ -190,15 +168,11 @@ Direct
 0.0
 """
         diagnostic = Diagnostic(
-            range=Range(
-                start=Position(line=8, character=0), end=Position(line=8, character=10)
-            ),
+            range=Range(start=Position(line=8, character=0), end=Position(line=8, character=10)),
             message="Direct coordinate is outside typical range [0, 1].",
         )
 
-        actions = provider._get_poscar_code_actions(
-            content, [diagnostic], diagnostic.range
-        )
+        actions = provider._get_poscar_code_actions(content, [diagnostic], diagnostic.range)
 
         # Should not crash, may or may not have actions
         assert isinstance(actions, list)
@@ -218,15 +192,11 @@ Gamma
 0 0 0
 """
         diagnostic = Diagnostic(
-            range=Range(
-                start=Position(line=3, character=0), end=Position(line=3, character=10)
-            ),
+            range=Range(start=Position(line=3, character=0), end=Position(line=3, character=10)),
             message="K-point grid value 0 is not positive.",
         )
 
-        actions = provider._get_kpoints_code_actions(
-            content, [diagnostic], diagnostic.range
-        )
+        actions = provider._get_kpoints_code_actions(content, [diagnostic], diagnostic.range)
 
         grid_action = next((a for a in actions if "grid" in a.title.lower()), None)
         assert grid_action is not None
@@ -243,15 +213,11 @@ Reciprocal
 0.5 0.5 0.5 0.3
 """
         diagnostic = Diagnostic(
-            range=Range(
-                start=Position(line=3, character=0), end=Position(line=3, character=30)
-            ),
+            range=Range(start=Position(line=3, character=0), end=Position(line=3, character=30)),
             message="K-point weights sum to 0.600 (expected ~1.0).",
         )
 
-        actions = provider._get_kpoints_code_actions(
-            content, [diagnostic], diagnostic.range
-        )
+        actions = provider._get_kpoints_code_actions(content, [diagnostic], diagnostic.range)
 
         # Should have normalize action or no action (if parsing fails)
         assert isinstance(actions, list)
@@ -267,15 +233,11 @@ Reciprocal
 0.5 0.5 0.5 0.0
 """
         diagnostic = Diagnostic(
-            range=Range(
-                start=Position(line=3, character=0), end=Position(line=3, character=30)
-            ),
+            range=Range(start=Position(line=3, character=0), end=Position(line=3, character=30)),
             message="K-point weights sum to 0.000 (expected ~1.0).",
         )
 
-        actions = provider._get_kpoints_code_actions(
-            content, [diagnostic], diagnostic.range
-        )
+        actions = provider._get_kpoints_code_actions(content, [diagnostic], diagnostic.range)
 
         # Should not crash
         assert isinstance(actions, list)
@@ -299,15 +261,11 @@ Direct
 0.0 0.0 0.0
 """
         diagnostic = Diagnostic(
-            range=Range(
-                start=Position(line=1, character=0), end=Position(line=1, character=5)
-            ),
+            range=Range(start=Position(line=1, character=0), end=Position(line=1, character=5)),
             message="Negative scale factor detected. This inverts the lattice.",
         )
 
-        actions = provider._get_poscar_code_actions(
-            content, [diagnostic], diagnostic.range
-        )
+        actions = provider._get_poscar_code_actions(content, [diagnostic], diagnostic.range)
 
         assert len(actions) >= 1
         assert any("scale factor" in a.title.lower() for a in actions)
@@ -327,15 +285,11 @@ Gamma
 0 0 0
 """
         diagnostic = Diagnostic(
-            range=Range(
-                start=Position(line=3, character=0), end=Position(line=3, character=10)
-            ),
+            range=Range(start=Position(line=3, character=0), end=Position(line=3, character=10)),
             message="K-point grid value 0 is not positive.",
         )
 
-        actions = provider._get_kpoints_code_actions(
-            content, [diagnostic], diagnostic.range
-        )
+        actions = provider._get_kpoints_code_actions(content, [diagnostic], diagnostic.range)
 
         assert len(actions) >= 1
         assert any("grid" in a.title.lower() for a in actions)
@@ -353,9 +307,7 @@ Gamma
         actions = provider._get_kpoints_code_actions(
             content,
             [],
-            Range(
-                start=Position(line=0, character=0), end=Position(line=0, character=0)
-            ),
+            Range(start=Position(line=0, character=0), end=Position(line=0, character=0)),
         )
 
         assert actions == []
@@ -371,15 +323,11 @@ class TestQuickFixesEdgeCases:
         content = """Invalid KPOINTS
 """
         diagnostic = Diagnostic(
-            range=Range(
-                start=Position(line=0, character=0), end=Position(line=0, character=10)
-            ),
+            range=Range(start=Position(line=0, character=0), end=Position(line=0, character=10)),
             message="K-point grid value is not positive.",
         )
 
-        actions = provider._get_kpoints_code_actions(
-            content, [diagnostic], diagnostic.range
-        )
+        actions = provider._get_kpoints_code_actions(content, [diagnostic], diagnostic.range)
 
         # Should not crash
         assert isinstance(actions, list)
@@ -403,9 +351,7 @@ Direct
 0.0 0.0 0.0
 """
         diagnostic = Diagnostic(
-            range=Range(
-                start=Position(line=1, character=0), end=Position(line=1, character=5)
-            ),
+            range=Range(start=Position(line=1, character=0), end=Position(line=1, character=5)),
             message="Negative scale factor detected.",
         )
 
@@ -426,9 +372,7 @@ Gamma
 0 0 0
 """
         diagnostic = Diagnostic(
-            range=Range(
-                start=Position(line=3, character=0), end=Position(line=3, character=10)
-            ),
+            range=Range(start=Position(line=3, character=0), end=Position(line=3, character=10)),
             message="K-point grid value 0 is not positive.",
         )
 
@@ -449,9 +393,7 @@ class TestQuickFixesEdgeCaseCoverage:
         # Directly test with invalid line
         lines = ["header", "invalid", "more"]
         diagnostic = Diagnostic(
-            range=Range(
-                start=Position(line=1, character=0), end=Position(line=1, character=5)
-            ),
+            range=Range(start=Position(line=1, character=0), end=Position(line=1, character=5)),
             message="Negative scale factor detected.",
         )
 
@@ -459,9 +401,7 @@ class TestQuickFixesEdgeCaseCoverage:
         class MockParser:
             pass
 
-        action = provider._create_fix_negative_scale_action(
-            lines, diagnostic, MockParser()
-        )
+        action = provider._create_fix_negative_scale_action(lines, diagnostic, MockParser())
         assert action is None
 
     def test_normalize_weights_empty_lines(self):
@@ -474,13 +414,9 @@ class TestQuickFixesEdgeCaseCoverage:
 
         lines = ["short", "lines"]  # Too short for line_num = 3
         diagnostic = Diagnostic(
-            range=Range(
-                start=Position(line=0, character=0), end=Position(line=0, character=10)
-            ),
+            range=Range(start=Position(line=0, character=0), end=Position(line=0, character=10)),
             message="K-point weights sum to 0.600",
         )
 
-        action = provider._create_normalize_weights_action(
-            lines, diagnostic, MockResult()
-        )
+        action = provider._create_normalize_weights_action(lines, diagnostic, MockResult())
         assert action is None

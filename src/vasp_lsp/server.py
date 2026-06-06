@@ -6,7 +6,7 @@ providing features like autocomplete, hover documentation, and diagnostics.
 
 import argparse
 import logging
-from typing import Optional
+from typing import Dict, List, Optional
 
 from lsprotocol.types import (
     TEXT_DOCUMENT_CODE_ACTION,
@@ -20,6 +20,7 @@ from lsprotocol.types import (
     CodeActionParams,
     CompletionOptions,
     CompletionParams,
+    Diagnostic,
     DidChangeTextDocumentParams,
     DidOpenTextDocumentParams,
     DidSaveTextDocumentParams,
@@ -57,22 +58,22 @@ class VASPLanguageServer(LanguageServer):
         self.quickfixes_provider = QuickFixesProvider()
 
         # Document cache
-        self.documents: dict = {}
-        self.document_diagnostics: dict = {}
+        self.documents: Dict[str, str] = {}
+        self.document_diagnostics: Dict[str, List[Diagnostic]] = {}
 
     def get_document_content(self, uri: str) -> Optional[str]:
         """Get document content from cache or workspace."""
         return self.documents.get(uri)
 
-    def set_document_content(self, uri: str, content: str):
+    def set_document_content(self, uri: str, content: str) -> None:
         """Cache document content."""
         self.documents[uri] = content
 
-    def set_document_diagnostics(self, uri: str, diagnostics: list):
+    def set_document_diagnostics(self, uri: str, diagnostics: List[Diagnostic]) -> None:
         """Cache document diagnostics for code actions."""
         self.document_diagnostics[uri] = diagnostics
 
-    def get_document_diagnostics(self, uri: str) -> list:
+    def get_document_diagnostics(self, uri: str) -> List[Diagnostic]:
         """Get cached document diagnostics."""
         return self.document_diagnostics.get(uri, [])
 
@@ -85,9 +86,7 @@ server = VASPLanguageServer()
 def initialize(params: InitializeParams) -> InitializeResult:
     """Handle server initialization."""
     logger.info("Initializing VASP-LSP v%s", __version__)
-    logger.info(
-        f"Client: {params.client_info.name if params.client_info else 'Unknown'}"
-    )
+    logger.info(f"Client: {params.client_info.name if params.client_info else 'Unknown'}")
 
     capabilities = ServerCapabilities(
         text_document_sync=TextDocumentSyncOptions(

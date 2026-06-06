@@ -15,9 +15,7 @@ class DiagnosticsProvider:
         """Initialize diagnostics provider."""
         pass
 
-    def get_diagnostics(
-        self, document_content: str, document_uri: str
-    ) -> List[Diagnostic]:
+    def get_diagnostics(self, document_content: str, document_uri: str) -> List[Diagnostic]:
         """Get diagnostics for the document.
 
         Args:
@@ -69,12 +67,8 @@ class DiagnosticsProvider:
 
             diagnostic = Diagnostic(
                 range=Range(
-                    start=Position(
-                        line=error["line"] - 1, character=error.get("column", 0)
-                    ),
-                    end=Position(
-                        line=error["line"] - 1, character=error.get("column", 0) + 1
-                    ),
+                    start=Position(line=error["line"] - 1, character=error.get("column", 0)),
+                    end=Position(line=error["line"] - 1, character=error.get("column", 0) + 1),
                 ),
                 message=error["message"],
                 severity=severity,
@@ -87,12 +81,8 @@ class DiagnosticsProvider:
             if get_tag_info(param_name) is None:
                 diagnostic = Diagnostic(
                     range=Range(
-                        start=Position(
-                            line=param.line_number - 1, character=param.column_start
-                        ),
-                        end=Position(
-                            line=param.line_number - 1, character=param.column_end
-                        ),
+                        start=Position(line=param.line_number - 1, character=param.column_start),
+                        end=Position(line=param.line_number - 1, character=param.column_end),
                     ),
                     message=f"Unknown INCAR tag: {param_name}",
                     severity=DiagnosticSeverity.Warning,
@@ -170,9 +160,7 @@ class DiagnosticsProvider:
                             start=Position(
                                 line=param.line_number - 1, character=param.column_start
                             ),
-                            end=Position(
-                                line=param.line_number - 1, character=param.column_end
-                            ),
+                            end=Position(line=param.line_number - 1, character=param.column_end),
                         ),
                         message=f"Value {value} is below minimum {min_val} for {tag.name}",
                         severity=DiagnosticSeverity.Warning,
@@ -186,9 +174,7 @@ class DiagnosticsProvider:
                             start=Position(
                                 line=param.line_number - 1, character=param.column_start
                             ),
-                            end=Position(
-                                line=param.line_number - 1, character=param.column_end
-                            ),
+                            end=Position(line=param.line_number - 1, character=param.column_end),
                         ),
                         message=f"Value {value} is above maximum {max_val} for {tag.name}",
                         severity=DiagnosticSeverity.Warning,
@@ -232,9 +218,7 @@ class DiagnosticsProvider:
                 Diagnostic(
                     range=Range(
                         start=Position(line=npar.line_number - 1, character=0),
-                        end=Position(
-                            line=npar.line_number - 1, character=len(npar.raw_line)
-                        ),
+                        end=Position(line=npar.line_number - 1, character=len(npar.raw_line)),
                     ),
                     message="NPAR and NCORE should not be set together. Prefer NCORE.",
                     severity=DiagnosticSeverity.Warning,
@@ -250,9 +234,7 @@ class DiagnosticsProvider:
                     Diagnostic(
                         range=Range(
                             start=Position(line=ldau.line_number - 1, character=0),
-                            end=Position(
-                                line=ldau.line_number - 1, character=len(ldau.raw_line)
-                            ),
+                            end=Position(line=ldau.line_number - 1, character=len(ldau.raw_line)),
                         ),
                         message="LDAU=.TRUE. requires LDAUTYPE to be set.",
                         severity=DiagnosticSeverity.Warning,
@@ -264,9 +246,7 @@ class DiagnosticsProvider:
                     Diagnostic(
                         range=Range(
                             start=Position(line=ldau.line_number - 1, character=0),
-                            end=Position(
-                                line=ldau.line_number - 1, character=len(ldau.raw_line)
-                            ),
+                            end=Position(line=ldau.line_number - 1, character=len(ldau.raw_line)),
                         ),
                         message="LDAU=.TRUE. requires LDAUL to be set.",
                         severity=DiagnosticSeverity.Warning,
@@ -278,9 +258,7 @@ class DiagnosticsProvider:
                     Diagnostic(
                         range=Range(
                             start=Position(line=ldau.line_number - 1, character=0),
-                            end=Position(
-                                line=ldau.line_number - 1, character=len(ldau.raw_line)
-                            ),
+                            end=Position(line=ldau.line_number - 1, character=len(ldau.raw_line)),
                         ),
                         message="LDAU=.TRUE. requires LDAUU to be set.",
                         severity=DiagnosticSeverity.Warning,
@@ -305,9 +283,7 @@ class DiagnosticsProvider:
                 Diagnostic(
                     range=Range(
                         start=Position(line=ispin.line_number - 1, character=0),
-                        end=Position(
-                            line=ispin.line_number - 1, character=len(ispin.raw_line)
-                        ),
+                        end=Position(line=ispin.line_number - 1, character=len(ispin.raw_line)),
                     ),
                     message="ISPIN=2 (spin-polarized) should have MAGMOM set for initial magnetic moments.",
                     severity=DiagnosticSeverity.Information,
@@ -335,12 +311,8 @@ class DiagnosticsProvider:
             diagnostics.append(
                 Diagnostic(
                     range=Range(
-                        start=Position(
-                            line=error["line"] - 1, character=error.get("column", 0)
-                        ),
-                        end=Position(
-                            line=error["line"] - 1, character=error.get("column", 0) + 1
-                        ),
+                        start=Position(line=error["line"] - 1, character=error.get("column", 0)),
+                        end=Position(line=error["line"] - 1, character=error.get("column", 0) + 1),
                     ),
                     message=error["message"],
                     severity=severity,
@@ -418,12 +390,8 @@ class DiagnosticsProvider:
             diagnostics.append(
                 Diagnostic(
                     range=Range(
-                        start=Position(
-                            line=error["line"] - 1, character=error.get("column", 0)
-                        ),
-                        end=Position(
-                            line=error["line"] - 1, character=error.get("column", 0) + 1
-                        ),
+                        start=Position(line=error["line"] - 1, character=error.get("column", 0)),
+                        end=Position(line=error["line"] - 1, character=error.get("column", 0) + 1),
                     ),
                     message=error["message"],
                     severity=severity,

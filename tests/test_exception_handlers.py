@@ -88,9 +88,7 @@ Reciprocal
         parser = KPOINTSParser(content)
 
         # Mock _parse_line_mode to raise an exception
-        with patch.object(
-            parser, "_parse_line_mode", side_effect=ValueError("Mock error")
-        ):
+        with patch.object(parser, "_parse_line_mode", side_effect=ValueError("Mock error")):
             data = parser.parse()
 
             # Should handle gracefully

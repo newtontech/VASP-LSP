@@ -150,9 +150,7 @@ class POSCARParser:
                 try:
                     parts = self.lines[line_idx].strip().split()
                     if len(parts) < 3:
-                        raise ValueError(
-                            f"Expected at least 3 values, got {len(parts)}"
-                        )
+                        raise ValueError(f"Expected at least 3 values, got {len(parts)}")
                     coord = [float(parts[0]), float(parts[1]), float(parts[2])]
                     coordinates.append(coord)
 

@@ -83,11 +83,7 @@ class HoverProvider:
         # Try to get tag info
         tag = get_tag_info(word)
         if tag:
-            return Hover(
-                contents=MarkupContent(
-                    kind=MarkupKind.Markdown, value=tag.to_markdown()
-                )
-            )
+            return Hover(contents=MarkupContent(kind=MarkupKind.Markdown, value=tag.to_markdown()))
 
         return None
 
@@ -133,9 +129,7 @@ class HoverProvider:
         if position.line in line_docs:
             title, description = line_docs[position.line]
             return Hover(
-                contents=MarkupContent(
-                    kind=MarkupKind.Markdown, value=f"{title}\n\n{description}"
-                )
+                contents=MarkupContent(kind=MarkupKind.Markdown, value=f"{title}\n\n{description}")
             )
 
         return None
@@ -165,9 +159,7 @@ class HoverProvider:
         if position.line in line_docs:
             title, description = line_docs[position.line]
             return Hover(
-                contents=MarkupContent(
-                    kind=MarkupKind.Markdown, value=f"{title}\n\n{description}"
-                )
+                contents=MarkupContent(kind=MarkupKind.Markdown, value=f"{title}\n\n{description}")
             )
 
         return None

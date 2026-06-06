@@ -47,9 +47,7 @@ class TestCompletionProvider:
         params.position.character = 0
 
         content = "some text"
-        completions = provider.get_completions(
-            params, content, "file:///test/other.txt"
-        )
+        completions = provider.get_completions(params, content, "file:///test/other.txt")
 
         # Should return empty list for non-VASP files
         assert completions is not None

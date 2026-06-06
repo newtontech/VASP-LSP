@@ -109,14 +109,10 @@ class KPOINTSParser:
 
             if line3.startswith("r"):
                 # Reciprocal coordinates (standard for explicit k-points)
-                return self._parse_explicit_mode(
-                    comment, nkpoints, line_idx, reciprocal=True
-                )
+                return self._parse_explicit_mode(comment, nkpoints, line_idx, reciprocal=True)
             elif line3.startswith("c") or line3.startswith("k"):
                 # Cartesian coordinates in units of 2π/a
-                return self._parse_explicit_mode(
-                    comment, nkpoints, line_idx, reciprocal=False
-                )
+                return self._parse_explicit_mode(comment, nkpoints, line_idx, reciprocal=False)
             elif line3.startswith("g"):
                 # Gamma-centered
                 return self._parse_gamma_monkhorst_mode(
@@ -147,9 +143,7 @@ class KPOINTSParser:
             )
             return None
 
-    def _parse_automatic_mode(
-        self, comment: str, line_idx: int
-    ) -> Optional[KPOINTSData]:
+    def _parse_automatic_mode(self, comment: str, line_idx: int) -> Optional[KPOINTSData]:
         """Parse fully automatic k-point mode.
 
         Args:
