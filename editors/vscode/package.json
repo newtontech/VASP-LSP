@@ -6,7 +6,7 @@
   "publisher": "newtontech",
   "license": "MIT",
   "engines": {
-    "vscode": "^1.74.0"
+    "vscode": "^1.82.0"
   },
   "categories": [
     "Programming Languages",
@@ -100,7 +100,7 @@
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
-    "@types/vscode": "^1.74.0",
+    "@types/vscode": "^1.82.0",
     "typescript": "^5.0.0"
   },
   "dependencies": {

@@ -7,7 +7,13 @@ on:
       - "src/**"
       - "tests/**"
       - "pyproject.toml"
+      - "editors/vscode/extension.ts"
+      - "editors/vscode/language-configuration.json"
+      - "editors/vscode/package-lock.json"
       - "editors/vscode/package.json"
+      - "editors/vscode/snippets/**"
+      - "editors/vscode/syntaxes/**"
+      - "editors/vscode/tsconfig.json"
       - ".github/workflows/**"
   pull_request:
     branches: [main]
@@ -15,7 +21,13 @@ on:
       - "src/**"
       - "tests/**"
       - "pyproject.toml"
+      - "editors/vscode/extension.ts"
+      - "editors/vscode/language-configuration.json"
+      - "editors/vscode/package-lock.json"
       - "editors/vscode/package.json"
+      - "editors/vscode/snippets/**"
+      - "editors/vscode/syntaxes/**"
+      - "editors/vscode/tsconfig.json"
       - ".github/workflows/**"
 
 permissions:
@@ -79,3 +91,27 @@ jobs:
           --cov-report=term-missing
           --cov-report=xml
           --cov-fail-under=95
+
+  vscode-extension:
+    name: VS Code extension
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: editors/vscode
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: editors/vscode/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Compile extension
+        run: npm run compile
