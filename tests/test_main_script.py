@@ -8,6 +8,8 @@ import subprocess
 import sys
 from unittest.mock import patch
 
+from vasp_lsp import __version__
+
 
 def test_main_script_help():
     """Test that the server can be run as a script with --help."""
@@ -36,7 +38,7 @@ def test_main_script_version():
 
     # Should exit cleanly
     assert result.returncode == 0
-    assert "0.1.0" in result.stdout
+    assert __version__ in result.stdout
 
 
 def test_run_as_main():

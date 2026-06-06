@@ -33,6 +33,7 @@ from lsprotocol.types import (
 )
 from pygls.server import LanguageServer
 
+from . import __version__
 from .features.completion import CompletionProvider
 from .features.diagnostics import DiagnosticsProvider
 from .features.formatting import FormattingProvider
@@ -48,7 +49,7 @@ class VASPLanguageServer(LanguageServer):
     """VASP Language Server implementation."""
 
     def __init__(self):
-        super().__init__(name="vasp-lsp", version="0.1.0")
+        super().__init__(name="vasp-lsp", version=__version__)
         self.completion_provider = CompletionProvider()
         self.hover_provider = HoverProvider()
         self.diagnostics_provider = DiagnosticsProvider()
@@ -83,7 +84,7 @@ server = VASPLanguageServer()
 @server.feature("initialize")
 def initialize(params: InitializeParams) -> InitializeResult:
     """Handle server initialization."""
-    logger.info("Initializing VASP-LSP v0.1.0")
+    logger.info("Initializing VASP-LSP v%s", __version__)
     logger.info(
         f"Client: {params.client_info.name if params.client_info else 'Unknown'}"
     )
@@ -234,7 +235,7 @@ def main():
     parser.add_argument(
         "--version",
         action="version",
-        version="%(prog)s 0.1.0",
+        version=f"%(prog)s {__version__}",
     )
 
     args = parser.parse_args()
