@@ -53,6 +53,11 @@ target-version = ['py39']
 select = ["E", "F", "I", "W"]
 ignore = ["E501"]
 
+[tool.pytest.ini_options]
+markers = [
+    "slow: performance benchmarks (deselect with '-m \"not slow\"')",
+]
+
 [tool.mypy]
 python_version = "3.9"
 follow_imports = "skip"
