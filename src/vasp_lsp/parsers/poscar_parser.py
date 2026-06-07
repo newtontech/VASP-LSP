@@ -16,6 +16,7 @@ class POSCARData:
     coordinate_type: str  # "Direct" or "Cartesian"
     coordinates: List[List[float]]
     selective_dynamics: Optional[List[List[bool]]] = None
+    coordinate_start_line: int = 0
 
 
 class POSCARParser:
@@ -84,6 +85,16 @@ class POSCARParser:
             # Line 6: Atom types (optional in VASP 5 format, required in VASP 4)
             atom_types_line = self.lines[line_idx].strip()
             # Check if it's atom symbols or atom counts
+            if not atom_types_line:
+                self.errors.append(
+                    {
+                        "message": "Missing atom types or atom counts",
+                        "line": line_idx + 1,
+                        "severity": "error",
+                    }
+                )
+                return None
+
             if atom_types_line[0].isalpha():
                 atom_types = atom_types_line.split()
                 line_idx += 1
@@ -93,6 +104,14 @@ class POSCARParser:
             # Line 6/7: Atom counts
             try:
                 atom_counts = [int(x) for x in self.lines[line_idx].strip().split()]
+                if any(count < 0 for count in atom_counts):
+                    self.errors.append(
+                        {
+                            "message": "Atom counts must be non-negative integers",
+                            "line": line_idx + 1,
+                            "severity": "error",
+                        }
+                    )
                 if atom_types and len(atom_types) != len(atom_counts):
                     self.errors.append(
                         {
@@ -143,6 +162,7 @@ class POSCARParser:
             # Read coordinates
             total_atoms = sum(atom_counts)
             coordinates = []
+            coordinate_start_line = line_idx + 1
             if selective_dynamics is not None:
                 selective_dynamics = []
 
@@ -157,13 +177,33 @@ class POSCARParser:
                     # Parse selective dynamics flags if present
                     if selective_dynamics is not None:
                         if len(parts) >= 6:
+                            invalid_flags = [
+                                flag
+                                for flag in parts[3:6]
+                                if flag.upper() not in {"T", "F", ".TRUE.", ".FALSE."}
+                            ]
+                            if invalid_flags:
+                                self.errors.append(
+                                    {
+                                        "message": "Selective dynamics flags must be T or F",
+                                        "line": line_idx + 1,
+                                        "severity": "error",
+                                    }
+                                )
                             flags = [
-                                parts[3].upper() == "T",
-                                parts[4].upper() == "T",
-                                parts[5].upper() == "T",
+                                parts[3].upper() in {"T", ".TRUE."},
+                                parts[4].upper() in {"T", ".TRUE."},
+                                parts[5].upper() in {"T", ".TRUE."},
                             ]
                         else:
-                            flags = [True, True, True]  # Default to movable
+                            self.errors.append(
+                                {
+                                    "message": "Selective dynamics coordinates require 3 T/F flags",
+                                    "line": line_idx + 1,
+                                    "severity": "error",
+                                }
+                            )
+                            flags = [True, True, True]
                         selective_dynamics.append(flags)
 
                 except (ValueError, IndexError) as e:
@@ -177,6 +217,24 @@ class POSCARParser:
                     return None
                 line_idx += 1
 
+            for extra_idx in range(line_idx, len(self.lines)):
+                extra = self.lines[extra_idx].strip()
+                if not extra or extra.startswith("#") or extra.startswith("!"):
+                    continue
+                parts = extra.split()
+                if len(parts) >= 3:
+                    try:
+                        [float(parts[0]), float(parts[1]), float(parts[2])]
+                    except ValueError:
+                        continue
+                    self.errors.append(
+                        {
+                            "message": "Extra coordinate row after expected atom count",
+                            "line": extra_idx + 1,
+                            "severity": "warning",
+                        }
+                    )
+
             self.data = POSCARData(
                 system_comment=system_comment,
                 scale_factor=scale_factor,
@@ -186,6 +244,7 @@ class POSCARParser:
                 coordinate_type=coordinate_type,
                 coordinates=coordinates,
                 selective_dynamics=selective_dynamics,
+                coordinate_start_line=coordinate_start_line,
             )
 
             return self.data

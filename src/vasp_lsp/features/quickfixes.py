@@ -3,6 +3,7 @@
 Provides code actions to automatically fix common VASP input file issues.
 """
 
+import re
 from typing import List, Optional
 
 from lsprotocol.types import (
@@ -111,6 +112,35 @@ class QuickFixesProvider:
                 fix_key = "add_magmom"
                 if fix_key not in added_fixes:
                     action = self._create_add_magmom_action(lines, diagnostic)
+                    if action:
+                        actions.append(action)
+                        added_fixes.add(fix_key)
+
+            if "magmom has" in message and "poscar contains" in message:
+                fix_key = "replace_magmom_count"
+                if fix_key not in added_fixes:
+                    action = self._create_replace_magmom_count_action(lines, diagnostic)
+                    if action:
+                        actions.append(action)
+                        added_fixes.add(fix_key)
+
+            if "encut=" in message and "potcar enmax" in message:
+                fix_key = "raise_encut"
+                if fix_key not in added_fixes:
+                    action = self._create_raise_encut_action(lines, diagnostic)
+                    if action:
+                        actions.append(action)
+                        added_fixes.add(fix_key)
+
+            if "kspacing is set" in message and "kpoints" in message:
+                fix_key = "remove_kspacing"
+                if fix_key not in added_fixes:
+                    action = self._create_remove_line_action(
+                        lines,
+                        diagnostic,
+                        "Remove KSPACING (use KPOINTS instead)",
+                        "Avoid conflicting k-point settings",
+                    )
                     if action:
                         actions.append(action)
                         added_fixes.add(fix_key)
@@ -253,6 +283,72 @@ class QuickFixesProvider:
                                 end=Position(line=insert_line, character=0),
                             ),
                             new_text=f"{param_name} = {default_value}\\n",
+                        )
+                    ]
+                }
+            ),
+        )
+
+    def _create_replace_magmom_count_action(
+        self, lines: List[str], diagnostic: Diagnostic
+    ) -> Optional[CodeAction]:
+        """Create action to replace MAGMOM with one default moment per atom."""
+        count_match = re.search(r"POSCAR contains (\d+) atoms", diagnostic.message)
+        if not count_match:
+            return None
+        count = int(count_match.group(1))
+        line_num = diagnostic.range.start.line
+        if line_num >= len(lines):
+            return None
+        line = lines[line_num]
+        moments = " ".join(["1.0"] * count)
+
+        return CodeAction(
+            title=f"Replace MAGMOM with {count} default moments",
+            kind=CodeActionKind.QuickFix,
+            diagnostics=[diagnostic],
+            edit=WorkspaceEdit(
+                changes={
+                    "document": [
+                        TextEdit(
+                            range=Range(
+                                start=Position(line=line_num, character=0),
+                                end=Position(line=line_num, character=len(line)),
+                            ),
+                            new_text=f"MAGMOM = {moments}",
+                        )
+                    ]
+                }
+            ),
+        )
+
+    def _create_raise_encut_action(
+        self, lines: List[str], diagnostic: Diagnostic
+    ) -> Optional[CodeAction]:
+        """Create action to raise ENCUT to the maximum POTCAR ENMAX."""
+        enmax_match = re.search(r"ENMAX=([-+]?\d+(?:\.\d+)?)", diagnostic.message)
+        if not enmax_match:
+            return None
+        enmax = float(enmax_match.group(1))
+        line_num = diagnostic.range.start.line
+        if line_num >= len(lines):
+            return None
+        line = lines[line_num]
+        value_text = f"{enmax:g}"
+
+        return CodeAction(
+            title=f"Set ENCUT to {value_text} eV",
+            kind=CodeActionKind.QuickFix,
+            diagnostics=[diagnostic],
+            edit=WorkspaceEdit(
+                changes={
+                    "document": [
+                        TextEdit(
+                            range=Range(
+                                start=Position(line=line_num, character=0),
+                                end=Position(line=line_num, character=len(line)),
+                            ),
+                            new_text=f"ENCUT = {value_text}",
                         )
                     ]
                 }

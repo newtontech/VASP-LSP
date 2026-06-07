@@ -107,6 +107,8 @@ class KPOINTSParser:
             line3 = self.lines[line_idx].strip().lower()
             line_idx += 1
 
+            if "line" in line3:
+                return self._parse_line_mode(comment, line_idx - 2)
             if line3.startswith("r"):
                 # Reciprocal coordinates (standard for explicit k-points)
                 return self._parse_explicit_mode(comment, nkpoints, line_idx, reciprocal=True)
