@@ -181,7 +181,7 @@ Reciprocal
         assert any("sum" in d.message.lower() for d in diagnostics)
 
     def test_kpoints_valid_no_warnings(self):
-        """Test diagnostics for valid KPOINTS returns empty list."""
+        """Test diagnostics for valid KPOINTS returns no warnings or errors."""
         provider = DiagnosticsProvider()
 
         content = """Automatic
@@ -192,8 +192,11 @@ Gamma
 """
         diagnostics = provider.get_diagnostics(content, "file:///test/KPOINTS")
 
-        # Should have no diagnostics for valid KPOINTS
-        assert diagnostics == []
+        # Should have no warnings or errors (informational hints are acceptable)
+        from lsprotocol.types import DiagnosticSeverity
+
+        non_info = [d for d in diagnostics if d.severity != DiagnosticSeverity.Information]
+        assert non_info == []
 
     def test_kpoints_contcar_file(self):
         """Test diagnostics for CONTCAR file."""

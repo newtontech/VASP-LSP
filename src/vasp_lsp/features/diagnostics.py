@@ -680,11 +680,12 @@ class DiagnosticsProvider:
 
     def _get_kpoints_diagnostics(self, content: str) -> List[Diagnostic]:
         """Get diagnostics for KPOINTS files."""
-        from ..parsers.kpoints_parser import KPOINTSParser
+        from ..parsers.kpoints_parser import KPOINTSMode, KPOINTSParser
 
-        diagnostics = []
+        diagnostics: List[Diagnostic] = []
         parser = KPOINTSParser(content)
         result = parser.parse()
+        lines = content.split("\n")
 
         # Report parse errors
         for error in parser.get_errors():
@@ -705,40 +706,81 @@ class DiagnosticsProvider:
                 )
             )
 
-        # Additional validation if parsing succeeded
-        if result and result.grid:
-            # Check for zero or negative grid values
-            for i, grid_val in enumerate(result.grid):
-                if grid_val <= 0:
-                    diagnostics.append(
-                        Diagnostic(
-                            range=Range(
-                                start=Position(line=2, character=0),
-                                end=Position(line=2, character=30),
-                            ),
-                            message=f"K-point grid value {grid_val} is not positive.",
-                            severity=DiagnosticSeverity.Error,
-                            source="vasp-lsp",
-                        )
-                    )
-                    break
+        if result is None:
+            return diagnostics
 
-            # Check for very sparse grids
-            if all(g < 2 for g in result.grid):
+        # Grid-based checks (automatic, gamma/monkhorst modes)
+        if result.grid:
+            diagnostics.extend(self._check_kpoints_grid(result, lines))
+
+        # Gamma vs Monkhorst-Pack hint
+        if result.mode == KPOINTSMode.GAMMA_MONKHORST:
+            diagnostics.extend(self._check_kpoints_centering(result, lines))
+
+        # Explicit k-point checks (weights, coordinates)
+        if result.mode == KPOINTSMode.EXPLICIT:
+            diagnostics.extend(self._check_kpoints_explicit(result, lines))
+
+        # Line-mode density check
+        if result.mode == KPOINTSMode.LINE_MODE:
+            diagnostics.extend(self._check_kpoints_line_mode(result, lines))
+
+        return diagnostics
+
+    def _check_kpoints_grid(self, result, lines: List[str]) -> List[Diagnostic]:
+        """Check k-point grid values for sparsity, density, and validity."""
+        diagnostics: List[Diagnostic] = []
+
+        # Check for zero or negative grid values
+        for grid_val in result.grid:
+            if grid_val <= 0:
                 diagnostics.append(
                     Diagnostic(
                         range=Range(
                             start=Position(line=2, character=0),
                             end=Position(line=2, character=30),
                         ),
-                        message="K-point grid is very sparse (all values < 2).",
-                        severity=DiagnosticSeverity.Warning,
+                        message=f"K-point grid value {grid_val} is not positive.",
+                        severity=DiagnosticSeverity.Error,
                         source="vasp-lsp",
                     )
                 )
+                break
+
+        # Check for very sparse grids
+        if all(g < 2 for g in result.grid):
+            diagnostics.append(
+                Diagnostic(
+                    range=Range(
+                        start=Position(line=2, character=0),
+                        end=Position(line=2, character=30),
+                    ),
+                    message="K-point grid is very sparse (all values < 2).",
+                    severity=DiagnosticSeverity.Warning,
+                    source="vasp-lsp",
+                )
+            )
+
+        # Check for very dense grids
+        if all(g > 50 for g in result.grid):
+            grid_str = " ".join(str(g) for g in result.grid)
+            diagnostics.append(
+                Diagnostic(
+                    range=Range(
+                        start=Position(line=2, character=0),
+                        end=Position(line=2, character=30),
+                    ),
+                    message=(
+                        f"K-point grid {grid_str} is very dense (all values > 50). "
+                        "Computationally expensive; may not converge faster than a moderate grid."
+                    ),
+                    severity=DiagnosticSeverity.Warning,
+                    source="vasp-lsp",
+                )
+            )
 
         # Check explicit k-point weights sum
-        if result and result.weights:
+        if result.weights:
             total_weight = sum(result.weights)
             if abs(total_weight - 1.0) > 0.01 and total_weight > 0:
                 diagnostics.append(
@@ -752,5 +794,128 @@ class DiagnosticsProvider:
                         source="vasp-lsp",
                     )
                 )
+
+        return diagnostics
+
+    def _check_kpoints_centering(self, result, lines: List[str]) -> List[Diagnostic]:
+        """Provide a hint about Gamma vs Monkhorst-Pack centering."""
+        diagnostics: List[Diagnostic] = []
+
+        # Line 3 (0-indexed) contains the generation type for Gamma/Monkhorst mode
+        if len(lines) > 2:
+            line3 = lines[2].strip().lower()
+            if line3.startswith("g"):
+                centering = "Gamma-centered"
+            elif line3.startswith("m"):
+                centering = "Monkhorst-Pack"
+            else:
+                return diagnostics
+
+            grid_str = "x".join(str(g) for g in (result.grid or []))
+            diagnostics.append(
+                Diagnostic(
+                    range=Range(
+                        start=Position(line=2, character=0),
+                        end=Position(line=2, character=30),
+                    ),
+                    message=(
+                        f"Using {centering} mesh with grid {grid_str}. "
+                        "Gamma-centered includes the Gamma point; "
+                        "Monkhorst-Pack shifts the mesh off Gamma."
+                    ),
+                    severity=DiagnosticSeverity.Information,
+                    source="vasp-lsp",
+                )
+            )
+
+        return diagnostics
+
+    def _check_kpoints_explicit(self, result, lines: List[str]) -> List[Diagnostic]:
+        """Check explicit k-points for zero weights and unreasonable coordinates."""
+        diagnostics: List[Diagnostic] = []
+
+        if not result.weights or not result.kpoints:
+            return diagnostics
+
+        # Check for zero-weight k-points
+        zero_weight_indices = [i for i, w in enumerate(result.weights) if w == 0.0]
+        if zero_weight_indices:
+            # Point to the first zero-weight k-point line
+            first_idx = zero_weight_indices[0]
+            kpoint_line = 3 + first_idx  # Line 4 is the first k-point (0-indexed: 3)
+            diagnostics.append(
+                Diagnostic(
+                    range=Range(
+                        start=Position(line=kpoint_line, character=0),
+                        end=Position(line=kpoint_line, character=40),
+                    ),
+                    message=(
+                        f"K-point {first_idx + 1} has weight 0.0. "
+                        "Zero-weight k-points are excluded from integration."
+                    ),
+                    severity=DiagnosticSeverity.Warning,
+                    source="vasp-lsp",
+                )
+            )
+
+        # Check for unreasonable k-point coordinates (outside [-1, 1] for reciprocal)
+        for i, kpoint in enumerate(result.kpoints):
+            for coord in kpoint:
+                if abs(coord) > 1.0:
+                    kpoint_line = 3 + i
+                    coord_str = " ".join(f"{c:.4f}" for c in kpoint)
+                    diagnostics.append(
+                        Diagnostic(
+                            range=Range(
+                                start=Position(line=kpoint_line, character=0),
+                                end=Position(line=kpoint_line, character=40),
+                            ),
+                            message=(
+                                f"K-point coordinates ({coord_str}) are outside the "
+                                "typical reciprocal range [-1, 1]. "
+                                "Verify coordinates are in fractional reciprocal space."
+                            ),
+                            severity=DiagnosticSeverity.Error,
+                            source="vasp-lsp",
+                        )
+                    )
+                    break  # One diagnostic per k-point line is enough
+
+        # Check weights sum (also applies to explicit mode)
+        total_weight = sum(result.weights)
+        if abs(total_weight - 1.0) > 0.01 and total_weight > 0:
+            diagnostics.append(
+                Diagnostic(
+                    range=Range(
+                        start=Position(line=3, character=0),
+                        end=Position(line=3, character=30),
+                    ),
+                    message=f"K-point weights sum to {total_weight:.3f} (expected ~1.0).",
+                    severity=DiagnosticSeverity.Information,
+                    source="vasp-lsp",
+                )
+            )
+
+        return diagnostics
+
+    def _check_kpoints_line_mode(self, result, lines: List[str]) -> List[Diagnostic]:
+        """Check line-mode k-point density."""
+        diagnostics: List[Diagnostic] = []
+
+        if result.line_density is not None and result.line_density < 10:
+            diagnostics.append(
+                Diagnostic(
+                    range=Range(
+                        start=Position(line=1, character=0),
+                        end=Position(line=1, character=20),
+                    ),
+                    message=(
+                        f"Line-mode density is {result.line_density} (< 10). "
+                        "Low point density may miss band structure features."
+                    ),
+                    severity=DiagnosticSeverity.Information,
+                    source="vasp-lsp",
+                )
+            )
 
         return diagnostics

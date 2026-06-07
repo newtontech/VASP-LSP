@@ -524,7 +524,11 @@ Gamma
 """
         diagnostics = provider.get_diagnostics(content, "file:///test/KPOINTS")
 
-        assert diagnostics == []
+        # Should have no warnings or errors (informational hints are acceptable)
+        from lsprotocol.types import DiagnosticSeverity
+
+        non_info = [d for d in diagnostics if d.severity != DiagnosticSeverity.Information]
+        assert non_info == []
 
     def test_diagnostics_non_vasp(self):
         """Test diagnostics for non-VASP file."""
