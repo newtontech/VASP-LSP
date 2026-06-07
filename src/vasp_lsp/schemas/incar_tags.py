@@ -198,6 +198,14 @@ INCAR_TAGS: Dict[str, INCARTag] = {
         description="If .TRUE., the k-point grid includes the Gamma point. Only relevant for Monkhorst-Pack grids.",
         category="electronic",
     ),
+    "KSPACING": INCARTag(
+        name="KSPACING",
+        type="float",
+        default=None,
+        description="Generate an automatic k-point mesh from a target reciprocal-space spacing. Do not use together with an explicit KPOINTS file.",
+        category="electronic",
+        valid_range=(0.0, None),
+    ),
     # Parallelization
     "NCORE": INCARTag(
         name="NCORE",
@@ -339,6 +347,14 @@ INCAR_TAGS: Dict[str, INCARTag] = {
         type="array",
         default=None,
         description="The effective on-site Coulomb interaction parameter Ueff = U - J for each species (in eV).",
+        category="electronic",
+        requires=["LDAU"],
+    ),
+    "LDAUJ": INCARTag(
+        name="LDAUJ",
+        type="array",
+        default=None,
+        description="The on-site exchange interaction J for each species (in eV). Required by some DFT+U formulations.",
         category="electronic",
         requires=["LDAU"],
     ),

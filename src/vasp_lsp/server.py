@@ -202,7 +202,7 @@ def code_action(params: CodeActionParams):
 
 def _publish_diagnostics(uri: str, content: str):
     """Publish diagnostics for a document."""
-    diagnostics = server.diagnostics_provider.get_diagnostics(content, uri)
+    diagnostics = server.diagnostics_provider.get_diagnostics(content, uri, server.documents)
     server.set_document_diagnostics(uri, diagnostics)
     server.publish_diagnostics(uri, diagnostics)
 
