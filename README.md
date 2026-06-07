@@ -14,7 +14,6 @@ VASP-LSP provides intelligent code editing features for VASP calculation input f
 - 📝 **Autocomplete** - Smart completion for INCAR tags and values
 - 📖 **Hover Documentation** - Instant access to VASP parameter documentation
 - ⚠️ **Diagnostics** - Real-time error detection and warnings
-- 🔍 **Go to Definition** - Navigate between related parameters
 - ✨ **Document Formatting** - Format INCAR, POSCAR, and KPOINTS files
 - 🔧 **Quick Fixes** - Automatic fixes for common issues (NEW)
 
@@ -101,7 +100,8 @@ Run tests with:
 pytest --cov=src/vasp_lsp --cov-report=term-missing
 ```
 
-Current coverage: 100% (428 tests passing)
+To verify current coverage, run the command above and check the TOTAL line in the report.
+Coverage thresholds are enforced in CI (see `.github/workflows/ci.yml`).
 
 
 ## Code Quality

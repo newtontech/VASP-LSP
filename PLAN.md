@@ -21,26 +21,12 @@ This is the development plan for vasp-lsp - a Language Server Protocol implement
 - [x] Quick fixes
 
 ## Testing
-- Run tests: \`pytest tests/\`
-- Check coverage: \`pytest --cov\`
-- Current status: 428 tests, 100% coverage (2026-03-04)
+- Run tests: `pytest tests/`
+- Check coverage: `pytest --cov`
+- Current status: run locally or check CI — see README for commands
 
-## Coverage Analysis (2026-03-04)
-All modules at 100%:
-- \`src/vasp_lsp/__init__.py\`: 100%
-- \`src/vasp_lsp/features/__init__.py\`: 100%
-- \`src/vasp_lsp/features/completion.py\`: 100%
-- \`src/vasp_lsp/features/diagnostics.py\`: 100%
-- \`src/vasp_lsp/features/formatting.py\`: 100%
-- \`src/vasp_lsp/features/hover.py\`: 100%
-- \`src/vasp_lsp/features/quickfixes.py\`: 100%
-- \`src/vasp_lsp/parsers/__init__.py\`: 100%
-- \`src/vasp_lsp/parsers/incar_parser.py\`: 100%
-- \`src/vasp_lsp/parsers/kpoints_parser.py\`: 100%
-- \`src/vasp_lsp/parsers/poscar_parser.py\`: 100%
-- \`src/vasp_lsp/schemas/__init__.py\`: 100%
-- \`src/vasp_lsp/schemas/incar_tags.py\`: 100%
-- \`src/vasp_lsp/server.py\`: 100%
+## Coverage Analysis
+See CI workflow (`.github/workflows/ci.yml`) for the latest verified coverage numbers.
 
 ## Maintenance
 - Nightly automated maintenance at random time
@@ -48,7 +34,6 @@ All modules at 100%:
 
 ## Recent Updates (2026-03-04)
 - ✅ Fixed all Ruff lint errors (W293, F841, F601)
-- ✅ 416 tests passing with 100% coverage maintained
 - ✅ All Ruff checks now pass
 - ✅ Updated pyproject.toml with proper lint configuration
 - ✅ All changes committed and pushed to GitHub
@@ -68,7 +53,6 @@ All modules at 100%:
 - Fixed unused variables (F841) in test files
 - Fixed ambiguous variable names (E741) in test files
 - Applied Ruff formatting to all source and test files
-- 416 tests passing with 100% coverage maintained
 - All Ruff checks now pass with zero warnings
 
 ## Next Steps
@@ -100,8 +84,7 @@ All modules at 100%:
 
 ### Tests
 - Added 12 new tests for POSCAR/KPOINTS diagnostics
-- Total tests: 428 (up from 416)
-- Coverage maintained at 100%
+- Coverage maintained
 
 ## VSCode Extension (2026-03-04)
 - ✅ Created VSCode extension configuration in editors/vscode/
@@ -123,8 +106,7 @@ All modules at 100%:
 
 ### Tests
 - Added 18 new tests for POSCAR/KPOINTS quick fixes
-- Total tests: 446 (up from 428)
-- Coverage: 99% (1175/1178 statements covered)
+- Coverage: verified via CI (see `.github/workflows/ci.yml`)
 
 ### Code Changes
 - Updated src/vasp_lsp/features/quickfixes.py
@@ -146,9 +128,8 @@ All modules at 100%:
   - Completion, Hover, Diagnostics, Formatting, Quick Fixes all working
 
 ### Tests
-- Total tests: 450
-- Coverage: 100% (1178/1178 statements covered)
 - All tests passing
+- Coverage: verified via CI (see `.github/workflows/ci.yml`)
 
 ### Documentation
 - README.md updated with latest features

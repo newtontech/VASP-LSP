@@ -58,6 +58,28 @@ jobs:
       - name: Run tests
         run: python -m pytest tests -q
 
+  smoke-test:
+    name: Install and import smoke test
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install from scratch
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install .
+
+      - name: Verify import and --version
+        run: |
+          python -c "from vasp_lsp import __version__; print('package version:', __version__)"
+          vasp-lsp --version
+
   quality:
     name: Quality gates
     runs-on: ubuntu-latest
