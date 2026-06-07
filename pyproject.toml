@@ -58,3 +58,8 @@ python_version = "3.9"
 follow_imports = "skip"
 warn_return_any = true
 warn_unused_configs = true
+
+[tool.pytest.ini_options]
+markers = [
+    "integration: integration tests that exercise LSP protocol messages",
+]
