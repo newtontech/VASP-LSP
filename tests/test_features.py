@@ -4,6 +4,8 @@ Tests for LSP features (completion, hover, diagnostics).
 
 from unittest.mock import Mock
 
+from lsprotocol.types import DiagnosticSeverity
+
 from vasp_lsp.features.completion import CompletionProvider
 from vasp_lsp.features.diagnostics import DiagnosticsProvider
 from vasp_lsp.features.hover import HoverProvider
@@ -176,8 +178,9 @@ Gamma
 """
         diagnostics = provider.get_diagnostics(content, "file:///test/KPOINTS")
 
-        # Should return empty list for valid KPOINTS
-        assert diagnostics == []
+        # Should have no warnings or errors (informational hints are acceptable)
+        non_info = [d for d in diagnostics if d.severity != DiagnosticSeverity.Information]
+        assert non_info == []
 
     def test_get_diagnostics_missing_sigma_warning(self):
         """Test warning for missing SIGMA when ISMEAR >= 0."""

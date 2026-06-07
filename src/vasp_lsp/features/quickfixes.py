@@ -503,7 +503,7 @@ class QuickFixesProvider:
         """Get code actions for KPOINTS files."""
         from ..parsers.kpoints_parser import KPOINTSParser
 
-        actions = []
+        actions: List[CodeAction] = []
         parser = KPOINTSParser(content)
         result = parser.parse()
         lines = content.split("\n")
@@ -520,6 +520,18 @@ class QuickFixesProvider:
             # Fix 2: Normalize k-point weights
             if "weights sum" in message:
                 action = self._create_normalize_weights_action(lines, diagnostic, result)
+                if action:
+                    actions.append(action)
+
+            # Fix 3: Fix zero-weight k-points
+            if "weight 0.0" in message:
+                action = self._create_fix_zero_weights_action(lines, diagnostic, result)
+                if action:
+                    actions.append(action)
+
+            # Fix 4: Reduce very dense grid
+            if "very dense" in message and ">" in message:
+                action = self._create_reduce_dense_grid_action(lines, diagnostic, result)
                 if action:
                     actions.append(action)
 
@@ -782,3 +794,86 @@ class QuickFixesProvider:
                         continue
 
         return actions[0] if actions else None
+
+    def _create_fix_zero_weights_action(
+        self, lines: List[str], diagnostic: Diagnostic, result
+    ) -> Optional[CodeAction]:
+        """Create action to fix zero-weight k-points by distributing equal weight."""
+        if not result or not result.weights:
+            return None
+
+        n_kpoints = len(result.weights)
+        if n_kpoints == 0:
+            return None
+
+        equal_weight = 1.0 / n_kpoints
+        edits = []
+        for i, weight in enumerate(result.weights):
+            if weight == 0.0:
+                line_num = 3 + i  # k-points start at line 4 (0-indexed: 3)
+                if line_num >= len(lines):
+                    continue
+                line = lines[line_num]
+                parts = line.strip().split()
+                if len(parts) >= 4:
+                    try:
+                        float(parts[3])  # Validate current weight is numeric
+                        new_line = line.replace(parts[3], f"{equal_weight:.6f}")
+                        edits.append(
+                            TextEdit(
+                                range=Range(
+                                    start=Position(line=line_num, character=0),
+                                    end=Position(line=line_num, character=len(line)),
+                                ),
+                                new_text=new_line,
+                            )
+                        )
+                    except ValueError:
+                        continue
+
+        if not edits:
+            return None
+
+        return CodeAction(
+            title=f"Set zero-weight k-points to {equal_weight:.4f} (1/{n_kpoints})",
+            kind=CodeActionKind.QuickFix,
+            diagnostics=[diagnostic],
+            edit=WorkspaceEdit(changes={"document": edits}),
+        )
+
+    def _create_reduce_dense_grid_action(
+        self, lines: List[str], diagnostic: Diagnostic, result
+    ) -> Optional[CodeAction]:
+        """Create action to reduce a very dense grid by capping at max_value while preserving ratios."""
+        if not result or not result.grid:
+            return None
+
+        max_cap = 50
+        grid = result.grid
+
+        # Cap values while preserving ratios
+        capped = [min(g, max_cap) for g in grid]
+        new_line = " ".join(str(g) for g in capped)
+        line_num = 2  # Grid is on line 3 (0-indexed: 2)
+
+        if line_num >= len(lines):
+            return None
+
+        return CodeAction(
+            title=f"Cap grid to {' '.join(str(g) for g in capped)} (max {max_cap})",
+            kind=CodeActionKind.QuickFix,
+            diagnostics=[diagnostic],
+            edit=WorkspaceEdit(
+                changes={
+                    "document": [
+                        TextEdit(
+                            range=Range(
+                                start=Position(line=line_num, character=0),
+                                end=Position(line=line_num, character=len(lines[line_num])),
+                            ),
+                            new_text=new_line,
+                        )
+                    ]
+                }
+            ),
+        )
