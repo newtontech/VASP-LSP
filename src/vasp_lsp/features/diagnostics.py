@@ -1,5 +1,6 @@
 """Diagnostics provider for VASP-LSP."""
 
+import math
 import os
 import re
 from typing import Dict, List, Optional
@@ -621,6 +622,24 @@ class DiagnosticsProvider:
                             )
                             break
 
+            # Check for extreme scale factor magnitude
+            diagnostics.extend(self._check_scale_factor_magnitude(result))
+
+            # Check lattice vector angles for nearly degenerate cell
+            diagnostics.extend(self._check_lattice_angles(result))
+
+            # Check coordinate count matches atom counts
+            diagnostics.extend(self._check_coordinate_count(result))
+
+            # Check for duplicate atom positions
+            diagnostics.extend(self._check_duplicate_positions(result))
+
+            # Check for very close atoms (potential overlap)
+            if result.coordinate_type == "Cartesian":
+                diagnostics.extend(self._check_close_atoms_cartesian(result))
+            else:
+                diagnostics.extend(self._check_close_atoms_direct(result))
+
         return diagnostics
 
     def _check_poscar_structure(self, result) -> List[Diagnostic]:
@@ -677,6 +696,160 @@ class DiagnosticsProvider:
             - a[1] * (b[0] * c[2] - b[2] * c[0])
             + a[2] * (b[0] * c[1] - b[1] * c[0])
         )
+
+    def _check_scale_factor_magnitude(self, result) -> List[Diagnostic]:
+        """Warn if scale factor magnitude is too small or too large."""
+        diagnostics: List[Diagnostic] = []
+        abs_scale = abs(result.scale_factor)
+        if abs_scale < 0.01 or abs_scale > 100:
+            diagnostics.append(
+                Diagnostic(
+                    range=Range(start=Position(line=1, character=0), end=Position(line=1, character=20)),
+                    message=f"Scale factor {result.scale_factor:g} has extreme magnitude "
+                    f"(|scale| = {abs_scale:g}). Consider using 1.0.",
+                    severity=DiagnosticSeverity.Warning,
+                    source="vasp-lsp",
+                )
+            )
+        return diagnostics
+
+    def _check_lattice_angles(self, result) -> List[Diagnostic]:
+        """Warn if any angle between lattice vectors is < 10 or > 170 degrees."""
+        diagnostics: List[Diagnostic] = []
+        vecs = result.lattice_vectors
+        pairs = [(0, 1, "a", "b"), (0, 2, "a", "c"), (1, 2, "b", "c")]
+        for i, j, name_i, name_j in pairs:
+            vi = vecs[i]
+            vj = vecs[j]
+            len_i = math.sqrt(sum(c * c for c in vi))
+            len_j = math.sqrt(sum(c * c for c in vj))
+            if len_i < 1e-12 or len_j < 1e-12:
+                continue
+            dot = sum(a * b for a, b in zip(vi, vj))
+            cos_angle = max(-1.0, min(1.0, dot / (len_i * len_j)))
+            angle_deg = math.degrees(math.acos(cos_angle))
+            if angle_deg < 10 or angle_deg > 170:
+                diagnostics.append(
+                    Diagnostic(
+                        range=Range(
+                            start=Position(line=2 + i, character=0),
+                            end=Position(line=2 + j, character=40),
+                        ),
+                        message=f"Angle between lattice vectors {name_i} and {name_j} is "
+                        f"{angle_deg:.1f} degrees, indicating a nearly degenerate cell.",
+                        severity=DiagnosticSeverity.Warning,
+                        source="vasp-lsp",
+                    )
+                )
+        return diagnostics
+
+    def _check_coordinate_count(self, result) -> List[Diagnostic]:
+        """Error if number of coordinate rows does not match sum of atom_counts."""
+        diagnostics: List[Diagnostic] = []
+        expected = sum(result.atom_counts)
+        actual = len(result.coordinates)
+        if actual != expected:
+            diagnostics.append(
+                Diagnostic(
+                    range=Range(
+                        start=Position(
+                            line=max(result.coordinate_start_line - 1, 0), character=0
+                        ),
+                        end=Position(
+                            line=max(result.coordinate_start_line - 1 + max(actual, expected) - 1, 0),
+                            character=40,
+                        ),
+                    ),
+                    message=f"Expected {expected} coordinate rows but found {actual}.",
+                    severity=DiagnosticSeverity.Error,
+                    source="vasp-lsp",
+                )
+            )
+        return diagnostics
+
+    def _check_duplicate_positions(self, result) -> List[Diagnostic]:
+        """Warn when two atoms have identical coordinates (within tolerance 1e-6)."""
+        diagnostics: List[Diagnostic] = []
+        tolerance = 1e-6
+        seen: List[int] = []
+        for i, coord_i in enumerate(result.coordinates):
+            if i in seen:
+                continue
+            for j in range(i + 1, len(result.coordinates)):
+                if j in seen:
+                    continue
+                dist_sq = sum((a - b) ** 2 for a, b in zip(coord_i, result.coordinates[j]))
+                if dist_sq < tolerance * tolerance:
+                    line_j = max(result.coordinate_start_line - 1 + j, 0)
+                    diagnostics.append(
+                        Diagnostic(
+                            range=Range(
+                                start=Position(line=line_j, character=0),
+                                end=Position(line=line_j, character=40),
+                            ),
+                            message=f"Atoms {i + 1} and {j + 1} have identical coordinates.",
+                            severity=DiagnosticSeverity.Warning,
+                            source="vasp-lsp",
+                        )
+                    )
+                    seen.append(j)
+                    break
+        return diagnostics
+
+    def _check_close_atoms_cartesian(self, result) -> List[Diagnostic]:
+        """Warn if any two Cartesian atoms are closer than 0.5 Angstrom."""
+        diagnostics: List[Diagnostic] = []
+        min_dist = 0.5
+        coords = result.coordinates
+        for i in range(len(coords)):
+            for j in range(i + 1, len(coords)):
+                diff = [coords[i][k] - coords[j][k] for k in range(3)]
+                dist = math.sqrt(sum(d * d for d in diff))
+                if 0 < dist < min_dist:
+                    line_j = max(result.coordinate_start_line - 1 + j, 0)
+                    diagnostics.append(
+                        Diagnostic(
+                            range=Range(
+                                start=Position(line=line_j, character=0),
+                                end=Position(line=line_j, character=40),
+                            ),
+                            message=f"Atoms {i + 1} and {j + 1} are {dist:.3f} Angstrom apart "
+                            f"(below minimum {min_dist} Angstrom).",
+                            severity=DiagnosticSeverity.Warning,
+                            source="vasp-lsp",
+                        )
+                    )
+        return diagnostics
+
+    def _check_close_atoms_direct(self, result) -> List[Diagnostic]:
+        """Warn if any two Direct atoms are closer than 0.5 Angstrom."""
+        diagnostics: List[Diagnostic] = []
+        min_dist = 0.5
+        coords = result.coordinates
+        scale = result.scale_factor
+        vecs = result.lattice_vectors
+        for i in range(len(coords)):
+            for j in range(i + 1, len(coords)):
+                diff_frac = [coords[i][k] - coords[j][k] for k in range(3)]
+                diff_cart = [
+                    scale * sum(vecs[r][k] * diff_frac[r] for r in range(3)) for k in range(3)
+                ]
+                dist = math.sqrt(sum(d * d for d in diff_cart))
+                if 0 < dist < min_dist:
+                    line_j = max(result.coordinate_start_line - 1 + j, 0)
+                    diagnostics.append(
+                        Diagnostic(
+                            range=Range(
+                                start=Position(line=line_j, character=0),
+                                end=Position(line=line_j, character=40),
+                            ),
+                            message=f"Atoms {i + 1} and {j + 1} are {dist:.3f} Angstrom apart "
+                            f"(below minimum {min_dist} Angstrom).",
+                            severity=DiagnosticSeverity.Warning,
+                            source="vasp-lsp",
+                        )
+                    )
+        return diagnostics
 
     def _get_kpoints_diagnostics(self, content: str) -> List[Diagnostic]:
         """Get diagnostics for KPOINTS files."""

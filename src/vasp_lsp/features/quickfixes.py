@@ -483,6 +483,18 @@ class QuickFixesProvider:
                 if action:
                     actions.append(action)
 
+            # Fix 3: Replace extreme scale factor with 1.0
+            if "extreme magnitude" in message:
+                action = self._create_fix_extreme_scale_action(lines, diagnostic)
+                if action:
+                    actions.append(action)
+
+            # Fix 4: Remove duplicate coordinate rows
+            if "identical coordinates" in message:
+                action = self._create_remove_duplicate_atoms_action(lines, diagnostic, parser)
+                if action:
+                    actions.append(action)
+
         return actions
 
     def _get_kpoints_code_actions(
@@ -591,6 +603,93 @@ class QuickFixesProvider:
                     ]
                 }
             ),
+        )
+
+    def _create_fix_extreme_scale_action(
+        self, lines: List[str], diagnostic: Diagnostic
+    ) -> Optional[CodeAction]:
+        """Create action to replace extreme scale factor with 1.0."""
+        line_num = 1  # Scale factor is always on line 1 (0-indexed)
+        if line_num >= len(lines):
+            return None
+        return CodeAction(
+            title="Replace extreme scale factor with 1.0",
+            kind=CodeActionKind.QuickFix,
+            diagnostics=[diagnostic],
+            edit=WorkspaceEdit(
+                changes={
+                    "document": [
+                        TextEdit(
+                            range=Range(
+                                start=Position(line=line_num, character=0),
+                                end=Position(line=line_num, character=len(lines[line_num])),
+                            ),
+                            new_text="1.0",
+                        )
+                    ]
+                }
+            ),
+        )
+
+    def _create_remove_duplicate_atoms_action(
+        self, lines: List[str], diagnostic: Diagnostic, parser
+    ) -> Optional[CodeAction]:
+        """Create action to remove duplicate coordinate rows (keep first occurrence)."""
+        if not parser.data:
+            return None
+
+        result = parser.data
+        coords = result.coordinates
+        tolerance = 1e-6
+        tol_sq = tolerance * tolerance
+
+        duplicate_indices: List[int] = []
+        seen: List[List[float]] = []
+
+        for i, coord in enumerate(coords):
+            is_dup = False
+            for seen_coord in seen:
+                dist_sq = sum((a - b) ** 2 for a, b in zip(coord, seen_coord))
+                if dist_sq < tol_sq:
+                    is_dup = True
+                    break
+            if is_dup:
+                duplicate_indices.append(i)
+            else:
+                seen.append(coord)
+
+        if not duplicate_indices:
+            return None
+
+        # Build edits: remove duplicate lines in reverse order
+        edits: List[TextEdit] = []
+        for idx in reversed(duplicate_indices):
+            line_num = max(result.coordinate_start_line - 1 + idx, 0)
+            if line_num < len(lines):
+                end_line = line_num + 1
+                end_char = 0
+                if end_line < len(lines):
+                    end_char = 0
+                else:
+                    end_char = len(lines[line_num])
+                edits.append(
+                    TextEdit(
+                        range=Range(
+                            start=Position(line=line_num, character=0),
+                            end=Position(line=end_line, character=end_char),
+                        ),
+                        new_text="",
+                    )
+                )
+
+        if not edits:
+            return None
+
+        return CodeAction(
+            title=f"Remove {len(duplicate_indices)} duplicate atom(s)",
+            kind=CodeActionKind.QuickFix,
+            diagnostics=[diagnostic],
+            edit=WorkspaceEdit(changes={"document": edits}),
         )
 
     def _create_fix_grid_action(
