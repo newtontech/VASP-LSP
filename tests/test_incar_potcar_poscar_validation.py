@@ -7,7 +7,6 @@ Covers issue #1 safe subset:
   - POSCAR/POTCAR species order validation
 """
 
-
 from vasp_lsp.features.diagnostics import DiagnosticsProvider
 
 # ---------------------------------------------------------------------------

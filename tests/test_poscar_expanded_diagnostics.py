@@ -9,6 +9,7 @@ from vasp_lsp.features.quickfixes import QuickFixesProvider
 # Helper: build a POSCAR string from parts
 # ---------------------------------------------------------------------------
 
+
 def _make_poscar(
     scale: str = "1.0",
     lattice: str = "1.0 0.0 0.0\n0.0 1.0 0.0\n0.0 0.0 1.0",
@@ -305,7 +306,9 @@ class TestRemoveDuplicateAtomsQuickFix:
             message="Atoms 1 and 3 have identical coordinates.",
         )
         actions = provider._get_poscar_code_actions(content, [diagnostic], diagnostic.range)
-        fix = next(a for a in actions if "remove" in a.title.lower() and "duplicate" in a.title.lower())
+        fix = next(
+            a for a in actions if "remove" in a.title.lower() and "duplicate" in a.title.lower()
+        )
         assert fix.edit is not None
         assert len(fix.edit.changes["document"]) >= 1
 
