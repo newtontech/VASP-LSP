@@ -156,7 +156,7 @@ class INCARParser:
         # Handle array values (space-separated)
         if " " in value_str:
             parts = value_str.split()
-            parsed_parts: list[Union[int, float, str]] = []
+            parsed_parts: List[Union[int, float, str]] = []
             for part in parts:
                 try:
                     parsed_parts.append(int(part))

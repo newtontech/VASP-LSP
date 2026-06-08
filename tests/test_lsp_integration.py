@@ -6,6 +6,7 @@ They create fresh server instances and call handler functions directly,
 validating the end-to-end data flow through the LSP layer.
 """
 
+from typing import Dict, List, Optional
 from unittest.mock import Mock
 
 import pytest
@@ -56,10 +57,10 @@ class _CaptureServer(VASPLanguageServer):
 
     def __init__(self) -> None:
         super().__init__()
-        self.published_diagnostics: dict[str, list[Diagnostic]] = {}
+        self.published_diagnostics: Dict[str, List[Diagnostic]] = {}
 
     def publish_diagnostics(
-        self, uri: str, diagnostics: list[Diagnostic] | None = None, **kwargs: object
+        self, uri: str, diagnostics: Optional[List[Diagnostic]] = None, **kwargs: object
     ) -> None:
         """Override to capture published diagnostics instead of sending over transport."""
         self.published_diagnostics[uri] = diagnostics or []
@@ -95,7 +96,9 @@ def _make_init_params() -> InitializeParams:
 
 def _make_did_open(uri: str, content: str, version: int = 1) -> DidOpenTextDocumentParams:
     return DidOpenTextDocumentParams(
-        text_document=TextDocumentItem(uri=uri, language_id="plaintext", version=version, text=content),
+        text_document=TextDocumentItem(
+            uri=uri, language_id="plaintext", version=version, text=content
+        ),
     )
 
 
@@ -134,7 +137,7 @@ def _make_formatting_params(uri: str) -> DocumentFormattingParams:
 def _make_code_action_params(
     uri: str,
     line: int,
-    diagnostics: list[Diagnostic],
+    diagnostics: List[Diagnostic],
 ) -> CodeActionParams:
     return CodeActionParams(
         text_document=TextDocumentIdentifier(uri=uri),

@@ -129,17 +129,13 @@ def _generate_large_kpoints(n_kpoints: int) -> str:
         f"{((i * 13) % n_kpoints) / n_kpoints:.6f}  1.0"
         for i in range(n_kpoints)
     )
-    return (
-        "Benchmark KPOINTS\n"
-        f"{n_kpoints}\n"
-        "Reciprocal\n"
-        f"{kpt_lines}\n"
-    )
+    return "Benchmark KPOINTS\n" f"{n_kpoints}\n" "Reciprocal\n" f"{kpt_lines}\n"
 
 
 # ---------------------------------------------------------------------------
 # Helper
 # ---------------------------------------------------------------------------
+
 
 def _measure_avg_ms(func, iterations: int) -> float:
     """Run *func* for *iterations* times and return the average wall-clock
@@ -154,6 +150,7 @@ def _measure_avg_ms(func, iterations: int) -> float:
 # ---------------------------------------------------------------------------
 # INCAR parser benchmarks
 # ---------------------------------------------------------------------------
+
 
 @pytest.mark.slow
 class TestINCARParserPerformance:
@@ -174,6 +171,7 @@ class TestINCARParserPerformance:
 # ---------------------------------------------------------------------------
 # POSCAR parser benchmarks
 # ---------------------------------------------------------------------------
+
 
 @pytest.mark.slow
 class TestPOSCARParserPerformance:
@@ -206,6 +204,7 @@ class TestPOSCARParserPerformance:
 # KPOINTS parser benchmarks
 # ---------------------------------------------------------------------------
 
+
 @pytest.mark.slow
 class TestKPOINTSParserPerformance:
     """Benchmarks for the KPOINTS file parser."""
@@ -237,6 +236,7 @@ class TestKPOINTSParserPerformance:
 # Diagnostics benchmarks
 # ---------------------------------------------------------------------------
 
+
 @pytest.mark.slow
 class TestDiagnosticsPerformance:
     """Benchmarks for the diagnostics provider."""
@@ -258,6 +258,7 @@ class TestDiagnosticsPerformance:
 # ---------------------------------------------------------------------------
 # Completion benchmarks
 # ---------------------------------------------------------------------------
+
 
 @pytest.mark.slow
 class TestCompletionPerformance:
@@ -303,6 +304,7 @@ class TestCompletionPerformance:
 # Hover benchmarks
 # ---------------------------------------------------------------------------
 
+
 @pytest.mark.slow
 class TestHoverPerformance:
     """Benchmarks for the hover documentation provider."""
@@ -343,14 +345,15 @@ class TestHoverPerformance:
                 lambda p=params: provider.get_hover(p, content, uri),
                 iterations,
             )
-            assert avg_ms < 5.0, (
-                f"INCAR hover (line {line}) too slow: {avg_ms:.2f} ms (budget 5 ms)"
-            )
+            assert (
+                avg_ms < 5.0
+            ), f"INCAR hover (line {line}) too slow: {avg_ms:.2f} ms (budget 5 ms)"
 
 
 # ---------------------------------------------------------------------------
 # Formatting benchmarks
 # ---------------------------------------------------------------------------
+
 
 @pytest.mark.slow
 class TestFormattingPerformance:

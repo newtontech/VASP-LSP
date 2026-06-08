@@ -1,6 +1,7 @@
 """Enhanced diagnostics for realistic VASP input failures."""
 
 from pathlib import Path
+from typing import Dict
 
 from lsprotocol.types import Diagnostic, DiagnosticSeverity, Position, Range
 
@@ -9,7 +10,7 @@ from vasp_lsp.features.quickfixes import QuickFixesProvider
 from vasp_lsp.parsers.potcar_parser import POTCARParser
 
 
-def write_calc(tmp_path: Path, files: dict[str, str]) -> dict[str, str]:
+def write_calc(tmp_path: Path, files: Dict[str, str]) -> Dict[str, str]:
     """Write a VASP calculation fixture and return file URIs."""
     uris = {}
     for name, content in files.items():
