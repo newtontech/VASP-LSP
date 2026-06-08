@@ -9,8 +9,8 @@ Validates that:
 from lsprotocol.types import DiagnosticSeverity
 
 from vasp_lsp.features.diagnostics import DiagnosticsProvider
-from vasp_lsp.parsers.poscar_parser import POSCARParser
 from vasp_lsp.parsers.kpoints_parser import KPOINTSParser
+from vasp_lsp.parsers.poscar_parser import POSCARParser
 
 
 # ---------------------------------------------------------------------------
