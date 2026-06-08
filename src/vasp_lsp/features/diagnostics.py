@@ -340,6 +340,75 @@ class DiagnosticsProvider:
                 )
             )
 
+        # Check ISMEAR=-5 (tetrahedron) with SIGMA set
+        if ismear and isinstance(ismear.value, int) and ismear.value < 0 and sigma:
+            diagnostics.append(
+                self._parameter_info(
+                    sigma,
+                    "SIGMA is set but ISMEAR < 0 (tetrahedron method). "
+                    "SIGMA is not used with the tetrahedron method.",
+                )
+            )
+
+        # Check LCHARG with ICHARG conflict
+        lcharg = parser.get_parameter("LCHARG")
+        icharg = parser.get_parameter("ICHARG")
+        if (
+            lcharg
+            and lcharg.value
+            and icharg
+            and isinstance(icharg.value, int)
+            and icharg.value == 11
+        ):
+            diagnostics.append(
+                self._parameter_warning(
+                    lcharg,
+                    "LCHARG=.TRUE. with ICHARG=11: the charge density will be overwritten "
+                    "on each step, making the output CHGCAR unreliable.",
+                )
+            )
+
+        # Check LWAVE with ISTART conflict
+        lwave = parser.get_parameter("LWAVE")
+        istart = parser.get_parameter("ISTART")
+        if lwave and lwave.value and istart and isinstance(istart.value, int) and istart.value == 0:
+            diagnostics.append(
+                self._parameter_info(
+                    lwave,
+                    "LWAVE=.TRUE. with ISTART=0: wavefunctions will be written but not "
+                    "read on restart. Consider whether LWAVE is needed.",
+                )
+            )
+
+        # Check IBRION=0 (MD) with NSW=0 (no ionic steps)
+        ibrion = parser.get_parameter("IBRION")
+        nsw = parser.get_parameter("NSW")
+        if (
+            ibrion
+            and isinstance(ibrion.value, int)
+            and ibrion.value == 0
+            and nsw
+            and isinstance(nsw.value, int)
+            and nsw.value == 0
+        ):
+            diagnostics.append(
+                self._parameter_warning(
+                    ibrion,
+                    "IBRION=0 (molecular dynamics) with NSW=0: no MD steps will be performed.",
+                )
+            )
+
+        # Check SMASS without IBRION=0 or IBRION=3
+        smass = parser.get_parameter("SMASS")
+        if smass:
+            if not ibrion or not isinstance(ibrion.value, int) or ibrion.value not in (0, 3):
+                diagnostics.append(
+                    self._parameter_info(
+                        smass,
+                        "SMASS is typically used with IBRION=0 (MD) or IBRION=3 (damped MD).",
+                    )
+                )
+
         return diagnostics
 
     def _check_workspace_consistency(
@@ -408,6 +477,25 @@ class DiagnosticsProvider:
                     )
                 )
 
+            # Check for POTCAR functional mixing (e.g., PBE + LDA)
+            if len(potcar_data.entries) > 1:
+                functionals = set()
+                for entry in potcar_data.entries:
+                    title = entry.title.upper()
+                    for prefix in ("PBE", "LDA", "PW91", "LDA_K"):
+                        if prefix in title:
+                            functionals.add(prefix)
+                            break
+                if len(functionals) > 1:
+                    first_param = next(iter(parser.get_all_parameters().values()), None)
+                    diagnostics.append(
+                        self._workspace_warning(
+                            first_param,
+                            f"POTCAR mixes functionals: {', '.join(sorted(functionals))}. "
+                            "Inconsistent pseudopotentials may produce unreliable results.",
+                        )
+                    )
+
         encut = parser.get_parameter("ENCUT")
         if encut and isinstance(encut.value, (int, float)) and potcar_data:
             enmax_values = [entry.enmax for entry in potcar_data.entries if entry.enmax is not None]
@@ -418,6 +506,14 @@ class DiagnosticsProvider:
                         self._parameter_warning(
                             encut,
                             f"ENCUT={encut.value:g} is below max POTCAR ENMAX={max_enmax:g} eV.",
+                        )
+                    )
+                elif float(encut.value) < 1.3 * max_enmax:
+                    recommended = round(1.3 * max_enmax)
+                    diagnostics.append(
+                        self._parameter_info(
+                            encut,
+                            f"For production calculations, ENCUT={recommended:g} eV (1.3 x ENMAX) is recommended.",
                         )
                     )
 
