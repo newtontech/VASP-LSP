@@ -711,7 +711,9 @@ class DiagnosticsProvider:
         if abs_scale < 0.01 or abs_scale > 100:
             diagnostics.append(
                 Diagnostic(
-                    range=Range(start=Position(line=1, character=0), end=Position(line=1, character=20)),
+                    range=Range(
+                        start=Position(line=1, character=0), end=Position(line=1, character=20)
+                    ),
                     message=f"Scale factor {result.scale_factor:g} has extreme magnitude "
                     f"(|scale| = {abs_scale:g}). Consider using 1.0.",
                     severity=DiagnosticSeverity.Warning,
@@ -759,11 +761,11 @@ class DiagnosticsProvider:
             diagnostics.append(
                 Diagnostic(
                     range=Range(
-                        start=Position(
-                            line=max(result.coordinate_start_line - 1, 0), character=0
-                        ),
+                        start=Position(line=max(result.coordinate_start_line - 1, 0), character=0),
                         end=Position(
-                            line=max(result.coordinate_start_line - 1 + max(actual, expected) - 1, 0),
+                            line=max(
+                                result.coordinate_start_line - 1 + max(actual, expected) - 1, 0
+                            ),
                             character=40,
                         ),
                     ),
@@ -1023,7 +1025,9 @@ class DiagnosticsProvider:
             return diagnostics
 
         # Use exact start line from parser when available
-        kpt_start = result.kpoints_start_line_idx if result.kpoints_start_line_idx is not None else 3
+        kpt_start = (
+            result.kpoints_start_line_idx if result.kpoints_start_line_idx is not None else 3
+        )
 
         # Check for zero-weight k-points
         zero_weight_indices = [i for i, w in enumerate(result.weights) if w == 0.0]
