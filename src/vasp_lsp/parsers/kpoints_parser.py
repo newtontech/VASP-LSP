@@ -27,6 +27,10 @@ class KPOINTSData:
     # Line mode specific
     n_lines: Optional[int] = None
     line_density: Optional[int] = None
+    # Source spans for exact diagnostic ranges (0-based line indices)
+    grid_line_idx: Optional[int] = None
+    shift_line_idx: Optional[int] = None
+    kpoints_start_line_idx: Optional[int] = None
 
 
 class KPOINTSParser:
@@ -157,6 +161,7 @@ class KPOINTSParser:
         """
         try:
             # Line 3: Grid dimensions
+            grid_line_idx = line_idx
             grid_line = self.lines[line_idx].strip().split()
             if len(grid_line) < 3:
                 self.errors.append(
@@ -171,8 +176,10 @@ class KPOINTSParser:
             line_idx += 1
 
             # Line 4: Shift (optional)
+            shift_line_idx = None
             shift = [0.0, 0.0, 0.0]
             if line_idx < len(self.lines):
+                shift_line_idx = line_idx
                 shift_line = self.lines[line_idx].strip().split()
                 if len(shift_line) >= 3:
                     shift = [
@@ -187,6 +194,8 @@ class KPOINTSParser:
                 kpoints=[],
                 grid=grid,
                 shift=shift,
+                grid_line_idx=grid_line_idx,
+                shift_line_idx=shift_line_idx,
             )
         except (ValueError, IndexError) as e:
             self.errors.append(
@@ -214,6 +223,7 @@ class KPOINTSParser:
         """
         try:
             # Next line: Grid dimensions
+            grid_line_idx = line_idx
             grid_line = self.lines[line_idx].strip().split()
             if len(grid_line) < 3:
                 self.errors.append(
@@ -228,8 +238,10 @@ class KPOINTSParser:
             line_idx += 1
 
             # Next line: Shift
+            shift_line_idx = None
             shift = [0.0, 0.0, 0.0]
             if line_idx < len(self.lines):
+                shift_line_idx = line_idx
                 shift_line = self.lines[line_idx].strip().split()
                 if len(shift_line) >= 3:
                     shift = [
@@ -244,6 +256,8 @@ class KPOINTSParser:
                 kpoints=[],
                 grid=grid,
                 shift=shift,
+                grid_line_idx=grid_line_idx,
+                shift_line_idx=shift_line_idx,
             )
         except (ValueError, IndexError) as e:
             self.errors.append(
@@ -272,6 +286,7 @@ class KPOINTSParser:
         try:
             kpoints = []
             weights = []
+            kpoints_start_line_idx = line_idx
 
             for i in range(nkpoints):
                 if line_idx >= len(self.lines):
@@ -306,6 +321,7 @@ class KPOINTSParser:
                 mode=KPOINTSMode.EXPLICIT,
                 kpoints=kpoints,
                 weights=weights,
+                kpoints_start_line_idx=kpoints_start_line_idx,
             )
         except (ValueError, IndexError) as e:
             self.errors.append(
