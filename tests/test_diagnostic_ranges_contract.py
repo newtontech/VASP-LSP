@@ -10,8 +10,9 @@ from lsprotocol.types import DiagnosticSeverity
 
 from vasp_lsp.features.diagnostics import DiagnosticsProvider
 from vasp_lsp.parsers.kpoints_parser import KPOINTSParser
-from vasp_lsp.parsers.poscar_parser import POSCARParser
-
+from vasp_lsp.parsers.poscar_parser import (
+    POSCARParser,  # noqa: I001 -- ruff wants these grouped without blank line but blank line between third-party and first-party is intentional
+)
 
 # ---------------------------------------------------------------------------
 # POSCAR exact source span tests
