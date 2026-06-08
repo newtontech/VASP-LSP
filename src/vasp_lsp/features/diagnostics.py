@@ -574,13 +574,16 @@ class DiagnosticsProvider:
         if result:
             diagnostics.extend(self._check_poscar_structure(result))
 
-            # Check for negative scale factor
+            # Check for negative scale factor (use exact line from parser)
             if result.scale_factor < 0:
                 diagnostics.append(
                     Diagnostic(
                         range=Range(
-                            start=Position(line=1, character=0),
-                            end=Position(line=1, character=20),
+                            start=Position(line=result.scale_factor_line, character=0),
+                            end=Position(
+                                line=result.scale_factor_line,
+                                character=len(str(result.scale_factor)),
+                            ),
                         ),
                         message="Negative scale factor detected. This inverts the lattice.",
                         severity=DiagnosticSeverity.Warning,
@@ -588,14 +591,17 @@ class DiagnosticsProvider:
                     )
                 )
 
-            # Check for zero atom counts
+            # Check for zero atom counts (use exact line from parser)
             total_atoms = sum(result.atom_counts)
             if total_atoms == 0:
                 diagnostics.append(
                     Diagnostic(
                         range=Range(
-                            start=Position(line=5, character=0),
-                            end=Position(line=5, character=50),
+                            start=Position(line=result.atom_counts_line, character=0),
+                            end=Position(
+                                line=result.atom_counts_line,
+                                character=len(" ".join(str(c) for c in result.atom_counts)),
+                            ),
                         ),
                         message="No atoms specified in POSCAR.",
                         severity=DiagnosticSeverity.Error,
@@ -603,17 +609,18 @@ class DiagnosticsProvider:
                     )
                 )
 
-            # Check coordinate ranges for direct coordinates
+            # Check coordinate ranges for direct coordinates (use exact lines)
             if result.coordinate_type == "Direct":
                 for i, coord in enumerate(result.coordinates):
                     for j, val in enumerate(coord):
                         if val < -0.5 or val > 1.5:
                             line_num = max(result.coordinate_start_line - 1 + i, 0)
+                            coord_str = " ".join(f"{v:.6g}" for v in coord)
                             diagnostics.append(
                                 Diagnostic(
                                     range=Range(
                                         start=Position(line=line_num, character=0),
-                                        end=Position(line=line_num, character=40),
+                                        end=Position(line=line_num, character=len(coord_str)),
                                     ),
                                     message=f"Direct coordinate {val:.3f} is outside typical range [0, 1].",
                                     severity=DiagnosticSeverity.Information,
@@ -704,7 +711,9 @@ class DiagnosticsProvider:
         if abs_scale < 0.01 or abs_scale > 100:
             diagnostics.append(
                 Diagnostic(
-                    range=Range(start=Position(line=1, character=0), end=Position(line=1, character=20)),
+                    range=Range(
+                        start=Position(line=1, character=0), end=Position(line=1, character=20)
+                    ),
                     message=f"Scale factor {result.scale_factor:g} has extreme magnitude "
                     f"(|scale| = {abs_scale:g}). Consider using 1.0.",
                     severity=DiagnosticSeverity.Warning,
@@ -752,11 +761,11 @@ class DiagnosticsProvider:
             diagnostics.append(
                 Diagnostic(
                     range=Range(
-                        start=Position(
-                            line=max(result.coordinate_start_line - 1, 0), character=0
-                        ),
+                        start=Position(line=max(result.coordinate_start_line - 1, 0), character=0),
                         end=Position(
-                            line=max(result.coordinate_start_line - 1 + max(actual, expected) - 1, 0),
+                            line=max(
+                                result.coordinate_start_line - 1 + max(actual, expected) - 1, 0
+                            ),
                             character=40,
                         ),
                     ),
@@ -904,14 +913,19 @@ class DiagnosticsProvider:
         """Check k-point grid values for sparsity, density, and validity."""
         diagnostics: List[Diagnostic] = []
 
+        # Use exact grid line from parser when available
+        grid_line = result.grid_line_idx if result.grid_line_idx is not None else 2
+        grid_text = lines[grid_line].strip() if grid_line < len(lines) else ""
+        grid_end_char = len(grid_text)
+
         # Check for zero or negative grid values
         for grid_val in result.grid:
             if grid_val <= 0:
                 diagnostics.append(
                     Diagnostic(
                         range=Range(
-                            start=Position(line=2, character=0),
-                            end=Position(line=2, character=30),
+                            start=Position(line=grid_line, character=0),
+                            end=Position(line=grid_line, character=grid_end_char),
                         ),
                         message=f"K-point grid value {grid_val} is not positive.",
                         severity=DiagnosticSeverity.Error,
@@ -925,8 +939,8 @@ class DiagnosticsProvider:
             diagnostics.append(
                 Diagnostic(
                     range=Range(
-                        start=Position(line=2, character=0),
-                        end=Position(line=2, character=30),
+                        start=Position(line=grid_line, character=0),
+                        end=Position(line=grid_line, character=grid_end_char),
                     ),
                     message="K-point grid is very sparse (all values < 2).",
                     severity=DiagnosticSeverity.Warning,
@@ -940,8 +954,8 @@ class DiagnosticsProvider:
             diagnostics.append(
                 Diagnostic(
                     range=Range(
-                        start=Position(line=2, character=0),
-                        end=Position(line=2, character=30),
+                        start=Position(line=grid_line, character=0),
+                        end=Position(line=grid_line, character=grid_end_char),
                     ),
                     message=(
                         f"K-point grid {grid_str} is very dense (all values > 50). "
@@ -1010,17 +1024,22 @@ class DiagnosticsProvider:
         if not result.weights or not result.kpoints:
             return diagnostics
 
+        # Use exact start line from parser when available
+        kpt_start = (
+            result.kpoints_start_line_idx if result.kpoints_start_line_idx is not None else 3
+        )
+
         # Check for zero-weight k-points
         zero_weight_indices = [i for i, w in enumerate(result.weights) if w == 0.0]
         if zero_weight_indices:
-            # Point to the first zero-weight k-point line
             first_idx = zero_weight_indices[0]
-            kpoint_line = 3 + first_idx  # Line 4 is the first k-point (0-indexed: 3)
+            kpoint_line = kpt_start + first_idx
+            kpt_text = lines[kpoint_line].strip() if kpoint_line < len(lines) else ""
             diagnostics.append(
                 Diagnostic(
                     range=Range(
                         start=Position(line=kpoint_line, character=0),
-                        end=Position(line=kpoint_line, character=40),
+                        end=Position(line=kpoint_line, character=len(kpt_text)),
                     ),
                     message=(
                         f"K-point {first_idx + 1} has weight 0.0. "
@@ -1035,13 +1054,13 @@ class DiagnosticsProvider:
         for i, kpoint in enumerate(result.kpoints):
             for coord in kpoint:
                 if abs(coord) > 1.0:
-                    kpoint_line = 3 + i
+                    kpoint_line = kpt_start + i
                     coord_str = " ".join(f"{c:.4f}" for c in kpoint)
                     diagnostics.append(
                         Diagnostic(
                             range=Range(
                                 start=Position(line=kpoint_line, character=0),
-                                end=Position(line=kpoint_line, character=40),
+                                end=Position(line=kpoint_line, character=len(coord_str)),
                             ),
                             message=(
                                 f"K-point coordinates ({coord_str}) are outside the "

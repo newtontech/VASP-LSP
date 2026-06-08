@@ -17,6 +17,13 @@ class POSCARData:
     coordinates: List[List[float]]
     selective_dynamics: Optional[List[List[bool]]] = None
     coordinate_start_line: int = 0
+    # Line indices (0-based) for key sections, enabling exact source spans
+    scale_factor_line: int = 1
+    lattice_start_line: int = 2
+    atom_types_line: int = 5
+    atom_counts_line: int = 6
+    coord_type_line: int = 7
+    has_selective_dynamics: bool = False
 
 
 class POSCARParser:
@@ -49,6 +56,7 @@ class POSCARParser:
             line_idx += 1
 
             # Line 2: Scale factor
+            scale_factor_line = line_idx
             try:
                 scale_factor = float(self.lines[line_idx].strip())
             except (ValueError, IndexError) as e:
@@ -63,6 +71,7 @@ class POSCARParser:
             line_idx += 1
 
             # Lines 3-5: Lattice vectors
+            lattice_start_line = line_idx
             lattice_vectors = []
             for i in range(3):
                 try:
@@ -83,6 +92,7 @@ class POSCARParser:
                 line_idx += 1
 
             # Line 6: Atom types (optional in VASP 5 format, required in VASP 4)
+            atom_types_line_idx = line_idx
             atom_types_line = self.lines[line_idx].strip()
             # Check if it's atom symbols or atom counts
             if not atom_types_line:
@@ -100,8 +110,10 @@ class POSCARParser:
                 line_idx += 1
             else:
                 atom_types = []
+                atom_types_line_idx = -1  # No explicit atom types line
 
             # Line 6/7: Atom counts
+            atom_counts_line_idx = line_idx
             try:
                 atom_counts = [int(x) for x in self.lines[line_idx].strip().split()]
                 if any(count < 0 for count in atom_counts):
@@ -137,10 +149,14 @@ class POSCARParser:
 
             # Check for selective dynamics line
             selective_dynamics: Optional[list] = None
+            has_selective_dynamics = False
+            coord_type_line_idx = line_idx
             coord_type_line = self.lines[line_idx].strip().lower()
             if coord_type_line.startswith("s"):
                 selective_dynamics = []
+                has_selective_dynamics = True
                 line_idx += 1
+                coord_type_line_idx = line_idx
                 coord_type_line = self.lines[line_idx].strip().lower()
 
             # Coordinate type
@@ -245,6 +261,12 @@ class POSCARParser:
                 coordinates=coordinates,
                 selective_dynamics=selective_dynamics,
                 coordinate_start_line=coordinate_start_line,
+                scale_factor_line=scale_factor_line,
+                lattice_start_line=lattice_start_line,
+                atom_types_line=max(atom_types_line_idx, 0),
+                atom_counts_line=atom_counts_line_idx,
+                coord_type_line=coord_type_line_idx,
+                has_selective_dynamics=has_selective_dynamics,
             )
 
             return self.data
