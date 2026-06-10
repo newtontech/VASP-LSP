@@ -4,6 +4,7 @@ from .completion import CompletionProvider
 from .diagnostics import DiagnosticsProvider
 from .formatting import FormattingProvider
 from .hover import HoverProvider
+from .navigation import DocumentSymbolsProvider
 from .quickfixes import QuickFixesProvider
 
 __all__ = [
@@ -11,5 +12,6 @@ __all__ = [
     "HoverProvider",
     "DiagnosticsProvider",
     "FormattingProvider",
+    "DocumentSymbolsProvider",
     "QuickFixesProvider",
 ]

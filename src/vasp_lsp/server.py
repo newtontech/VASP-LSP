@@ -6,6 +6,7 @@ providing features like autocomplete, hover documentation, and diagnostics.
 
 import argparse
 import logging
+import re
 from typing import Dict, List, Optional
 
 from lsprotocol.types import (
@@ -14,8 +15,10 @@ from lsprotocol.types import (
     TEXT_DOCUMENT_DID_CHANGE,
     TEXT_DOCUMENT_DID_OPEN,
     TEXT_DOCUMENT_DID_SAVE,
+    TEXT_DOCUMENT_DOCUMENT_SYMBOL,
     TEXT_DOCUMENT_FORMATTING,
     TEXT_DOCUMENT_HOVER,
+    TEXT_DOCUMENT_RENAME,
     CodeActionOptions,
     CodeActionParams,
     CompletionOptions,
@@ -25,12 +28,18 @@ from lsprotocol.types import (
     DidOpenTextDocumentParams,
     DidSaveTextDocumentParams,
     DocumentFormattingParams,
+    DocumentSymbolParams,
     HoverParams,
     InitializeParams,
     InitializeResult,
+    Position,
+    Range,
+    RenameParams,
     ServerCapabilities,
     TextDocumentSyncKind,
     TextDocumentSyncOptions,
+    TextEdit,
+    WorkspaceEdit,
 )
 from pygls.server import LanguageServer
 
@@ -39,6 +48,7 @@ from .features.completion import CompletionProvider
 from .features.diagnostics import DiagnosticsProvider
 from .features.formatting import FormattingProvider
 from .features.hover import HoverProvider
+from .features.navigation import DocumentSymbolsProvider
 from .features.quickfixes import QuickFixesProvider
 
 # Set up logging
@@ -56,6 +66,7 @@ class VASPLanguageServer(LanguageServer):
         self.diagnostics_provider = DiagnosticsProvider()
         self.formatting_provider = FormattingProvider()
         self.quickfixes_provider = QuickFixesProvider()
+        self.navigation_provider = DocumentSymbolsProvider()
 
         # Document cache
         self.documents: Dict[str, str] = {}
@@ -99,6 +110,8 @@ def initialize(params: InitializeParams) -> InitializeResult:
         ),
         hover_provider=True,
         document_formatting_provider=True,
+        document_symbol_provider=True,
+        rename_provider=True,
         code_action_provider=CodeActionOptions(
             code_action_kinds=[
                 "quickfix",
@@ -200,11 +213,92 @@ def code_action(params: CodeActionParams):
     return server.quickfixes_provider.get_code_actions(content, uri, diagnostics, range)
 
 
+@server.feature(TEXT_DOCUMENT_DOCUMENT_SYMBOL)
+def document_symbol(params: DocumentSymbolParams):
+    """Handle document symbol request."""
+    uri = params.text_document.uri
+    content = server.get_document_content(uri)
+
+    if content is None:
+        return []
+
+    return server.navigation_provider.get_symbols(content, uri)
+
+
+@server.feature(TEXT_DOCUMENT_RENAME)
+def rename(params: RenameParams):
+    """Handle rename request for INCAR parameters."""
+    uri = params.text_document.uri
+    content = server.get_document_content(uri)
+
+    if content is None:
+        return None
+
+    file_type = _get_file_type(uri)
+    if file_type != "INCAR":
+        return None
+
+    new_name = params.new_name.upper()
+    position = params.position
+    lines = content.split("\n")
+
+    if position.line >= len(lines):
+        return None
+
+    line = lines[position.line]
+
+    # Find the tag name under cursor
+    match = re.match(r"^\s*([A-Za-z_][A-Za-z0-9_]*)\s*=", line)
+    if not match:
+        return None
+
+    old_name = match.group(1)
+
+    # Check that new_name is a valid INCAR tag or at least a valid identifier
+    if not re.match(r"^[A-Za-z_][A-Za-z0-9_]*$", new_name):
+        return None
+
+    # Rename all occurrences of the tag in the document
+    edits = []
+    for line_idx, doc_line in enumerate(lines):
+        tag_match = re.match(r"^(\s*)([A-Za-z_][A-Za-z0-9_]*)\s*=", doc_line)
+        if tag_match and tag_match.group(2).upper() == old_name.upper():
+            start_char = tag_match.start(2)
+            end_char = tag_match.end(2)
+
+            edits.append(
+                TextEdit(
+                    range=Range(
+                        start=Position(line=line_idx, character=start_char),
+                        end=Position(line=line_idx, character=end_char),
+                    ),
+                    new_text=new_name,
+                )
+            )
+
+    if not edits:
+        return None
+
+    return WorkspaceEdit(changes={uri: edits})
+
+
 def _publish_diagnostics(uri: str, content: str):
     """Publish diagnostics for a document."""
     diagnostics = server.diagnostics_provider.get_diagnostics(content, uri, server.documents)
     server.set_document_diagnostics(uri, diagnostics)
     server.publish_diagnostics(uri, diagnostics)
+
+
+def _get_file_type(uri: str) -> str:
+    """Determine file type from URI."""
+    filename = uri.split("/")[-1].upper()
+    if "INCAR" in filename:
+        return "INCAR"
+    if "POSCAR" in filename or "CONTCAR" in filename:
+        return "POSCAR"
+    if "KPOINTS" in filename:
+        return "KPOINTS"
+    return "UNKNOWN"
 
 
 def main():
