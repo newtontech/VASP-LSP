@@ -63,3 +63,17 @@ def test_diagnostic_snapshot_includes_runtime_metadata() -> None:
     assert item["confidence"] == 0.86
     assert item["category"] == "electronic_minimization"
     assert item["related_files"] == ["INCAR", "POSCAR", "OUTCAR", "stdout"]
+
+
+def test_electronic_runtime_diagnostic_marks_restart_file_hints_unsafe() -> None:
+    content = "Error EDDDAV: Call to ZHEGV failed. Returncode = 5\n"
+
+    diagnostic = DiagnosticsProvider().get_diagnostics(content, "file:///calc/OUTCAR")[0]
+    actions = diagnostic.data["suggested_actions"]
+
+    assert any(action["title"] == "Set ALGO = Normal" for action in actions)
+    assert any(
+        action["title"] == "Suggest removing CHGCAR/WAVECAR after confirmation"
+        and action["safe_to_auto_apply"] is False
+        for action in actions
+    )
