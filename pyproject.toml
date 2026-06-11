@@ -41,6 +41,7 @@ dev = [
 
 [project.scripts]
 vasp-lsp = "vasp_lsp.server:main"
+vasp-lsp-tool = "vasp_lsp.tool:main"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/vasp_lsp"]
@@ -64,3 +65,4 @@ markers = [
     "slow: performance benchmarks (deselect with '-m \"not slow\"')",
     "integration: integration tests that exercise LSP protocol messages",
 ]
+
