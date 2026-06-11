@@ -1,5 +1,6 @@
 """Diagnostics provider for VASP-LSP."""
 
+import json
 import math
 import os
 import re
@@ -765,7 +766,188 @@ class DiagnosticsProvider:
                     )
                 )
 
+        diagnostics.extend(
+            self._check_parallel_restart_preflight(
+                parser,
+                document_uri,
+                workspace_documents,
+                kpoints,
+                kpoints_data,
+                poscar,
+                poscar_data,
+            )
+        )
+
         return diagnostics
+
+    def _check_parallel_restart_preflight(
+        self,
+        parser: INCARParser,
+        document_uri: str,
+        workspace_documents: Optional[Dict[str, str]],
+        kpoints: Optional[KPOINTSParser],
+        kpoints_data,
+        poscar: Optional[POSCARParser],
+        poscar_data,
+    ) -> List[Diagnostic]:
+        """Check high-value runtime-risk settings before a VASP run."""
+        diagnostics: List[Diagnostic] = []
+
+        lhfcalc = parser.get_parameter("LHFCALC")
+        algo = parser.get_parameter("ALGO")
+        if lhfcalc and lhfcalc.value is True and algo and str(algo.value).upper() == "VERYFAST":
+            diagnostics.append(
+                self._parameter_warning(
+                    algo,
+                    "LHFCALC=.TRUE. with ALGO=VeryFast is a runtime-risk combination; "
+                    "hybrid calculations should use ALGO=Normal or a safer preconverged setup.",
+                )
+            )
+
+        diagnostics.extend(self._check_nkred_divisibility(parser, kpoints_data))
+        diagnostics.extend(self._check_parallel_layout(parser, document_uri, workspace_documents))
+        diagnostics.extend(self._check_restart_files(parser, document_uri, workspace_documents))
+        diagnostics.extend(self._check_dimer_context(parser, poscar, poscar_data))
+
+        return diagnostics
+
+    def _check_nkred_divisibility(self, parser: INCARParser, kpoints_data) -> List[Diagnostic]:
+        diagnostics: List[Diagnostic] = []
+        if not kpoints_data or not kpoints_data.grid:
+            return diagnostics
+
+        checks: List[tuple[str, int, Any]] = []
+        nkred = parser.get_parameter("NKRED")
+        if nkred:
+            checks.extend((("NKRED", axis, nkred) for axis in range(3)))
+        for name, axis in (("NKREDX", 0), ("NKREDY", 1), ("NKREDZ", 2)):
+            param = parser.get_parameter(name)
+            if param:
+                checks.append((name, axis, param))
+
+        for name, axis, param in checks:
+            value = self._integer_param_value(param)
+            if value is None or value <= 0:
+                continue
+            mesh = kpoints_data.grid[axis]
+            if mesh % value != 0:
+                diagnostics.append(
+                    self._parameter_warning(
+                        param,
+                        f"{name}={value} does not divide KPOINTS mesh dimension {mesh}.",
+                    )
+                )
+        return diagnostics
+
+    def _check_parallel_layout(
+        self,
+        parser: INCARParser,
+        document_uri: str,
+        workspace_documents: Optional[Dict[str, str]],
+    ) -> List[Diagnostic]:
+        diagnostics: List[Diagnostic] = []
+        config = self._read_plan24_config(document_uri, workspace_documents)
+        mpi_ranks = config.get("mpi_ranks")
+        if not isinstance(mpi_ranks, int) or mpi_ranks <= 0:
+            return diagnostics
+
+        kpar = parser.get_parameter("KPAR")
+        kpar_value = self._integer_param_value(kpar) if kpar else None
+        ranks_per_kpar = mpi_ranks
+        if kpar and kpar_value and kpar_value > 0:
+            if mpi_ranks % kpar_value != 0:
+                diagnostics.append(
+                    self._parameter_warning(
+                        kpar,
+                        f"KPAR={kpar_value} does not divide mpi_ranks={mpi_ranks}.",
+                    )
+                )
+            else:
+                ranks_per_kpar = mpi_ranks // kpar_value
+
+        ncore = parser.get_parameter("NCORE")
+        ncore_value = self._integer_param_value(ncore) if ncore else None
+        if ncore and ncore_value and ncore_value > 0 and ranks_per_kpar % ncore_value != 0:
+            diagnostics.append(
+                self._parameter_warning(
+                    ncore,
+                    f"NCORE={ncore_value} does not divide ranks per KPAR group {ranks_per_kpar}.",
+                )
+            )
+
+        return diagnostics
+
+    def _check_restart_files(
+        self,
+        parser: INCARParser,
+        document_uri: str,
+        workspace_documents: Optional[Dict[str, str]],
+    ) -> List[Diagnostic]:
+        diagnostics: List[Diagnostic] = []
+        istart = parser.get_parameter("ISTART")
+        if istart and istart.value in (1, 2):
+            wavecar_content = self._read_neighbor(document_uri, "WAVECAR", workspace_documents)
+            if wavecar_content is None:
+                diagnostics.append(
+                    self._parameter_info(
+                        istart,
+                        f"ISTART={istart.value} usually requires WAVECAR in the calculation directory.",
+                    )
+                )
+        return diagnostics
+
+    def _check_dimer_context(
+        self, parser: INCARParser, poscar: Optional[POSCARParser], poscar_data
+    ) -> List[Diagnostic]:
+        diagnostics: List[Diagnostic] = []
+        ibrion = parser.get_parameter("IBRION")
+        if not ibrion or ibrion.value != 44 or not poscar or not poscar_data:
+            return diagnostics
+        if not self._poscar_has_dimer_vector(poscar, poscar_data):
+            diagnostics.append(
+                self._parameter_warning(
+                    ibrion,
+                    "IBRION=44 dimer mode requires a dimer direction vector block after POSCAR coordinates.",
+                )
+            )
+        return diagnostics
+
+    def _poscar_has_dimer_vector(self, poscar: POSCARParser, poscar_data) -> bool:
+        coordinate_end = poscar_data.coordinate_start_line + len(poscar_data.coordinates)
+        for line in poscar.lines[coordinate_end:]:
+            parts = line.strip().split()
+            if len(parts) < 3:
+                continue
+            try:
+                [float(part) for part in parts[:3]]
+            except ValueError:
+                continue
+            return True
+        return False
+
+    def _read_plan24_config(
+        self,
+        document_uri: str,
+        workspace_documents: Optional[Dict[str, str]],
+    ) -> Dict[str, Any]:
+        content = self._read_neighbor(document_uri, "vasp-lsp.json", workspace_documents)
+        if content is None:
+            return {}
+        try:
+            data = json.loads(content)
+        except json.JSONDecodeError:
+            return {}
+        return data if isinstance(data, dict) else {}
+
+    def _integer_param_value(self, param) -> Optional[int]:
+        value = getattr(param, "value", None)
+        if isinstance(value, bool):
+            return None
+        if isinstance(value, int):
+            return value
+        if isinstance(value, float) and value.is_integer():
+            return int(value)
+        return None
 
     # ------------------------------------------------------------------
     # Schema-aware static checks (#20, #21)
@@ -954,7 +1136,10 @@ class DiagnosticsProvider:
                 path = self._uri_to_path(uri)
                 if not path:
                     continue
-                if os.path.dirname(path) == base_dir and os.path.basename(path).upper() == filename:
+                if (
+                    os.path.dirname(path) == base_dir
+                    and os.path.basename(path).upper() == filename.upper()
+                ):
                     return content
 
         path = self._uri_to_path(document_uri)
