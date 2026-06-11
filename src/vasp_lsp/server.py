@@ -5,6 +5,7 @@ providing features like autocomplete, hover documentation, and diagnostics.
 """
 
 import argparse
+import json
 import logging
 import re
 from typing import Dict, List, Optional
@@ -29,6 +30,7 @@ from lsprotocol.types import (
     DidSaveTextDocumentParams,
     DocumentFormattingParams,
     DocumentSymbolParams,
+    ExecuteCommandParams,
     HoverParams,
     InitializeParams,
     InitializeResult,
@@ -118,6 +120,9 @@ def initialize(params: InitializeParams) -> InitializeResult:
                 "source",
             ]
         ),
+        execute_command_provider={
+            "commands": ["vasp-lsp.diagnosticSnapshot"],
+        },
     )
 
     return InitializeResult(capabilities=capabilities)
@@ -280,6 +285,37 @@ def rename(params: RenameParams):
         return None
 
     return WorkspaceEdit(changes={uri: edits})
+
+
+# ---------------------------------------------------------------------------
+# Execute command: diagnostic snapshot for agent feedback loops (#18)
+# ---------------------------------------------------------------------------
+
+
+@server.feature("workspace/executeCommand")
+def execute_command(params: ExecuteCommandParams):
+    """Handle execute command requests.
+
+    Supports:
+      - ``vasp-lsp.diagnosticSnapshot``: returns a JSON string with a structured
+        diagnostic snapshot for the requested document URI.
+    """
+    command = params.command
+    arguments = params.arguments or []
+
+    if command == "vasp-lsp.diagnosticSnapshot":
+        if not arguments:
+            return None
+        uri = arguments[0]
+        content = server.get_document_content(uri)
+        if content is None:
+            return None
+        snapshot = server.diagnostics_provider.get_diagnostics_snapshot(
+            content, uri, server.documents
+        )
+        return json.dumps(snapshot, default=str)
+
+    return None
 
 
 def _publish_diagnostics(uri: str, content: str):
