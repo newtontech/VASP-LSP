@@ -158,6 +158,62 @@ NPAR = 2"""
         assert len(actions) > 0
         assert any("ENCUT" in action.title for action in actions)
 
+    def test_runtime_symmetry_actions_append_safe_incar_settings(self, quickfixes):
+        """Runtime symmetry diagnostics can add safe INCAR recovery settings."""
+        content = "ENCUT = 520\n"
+        diagnostic = Diagnostic(
+            range=Range(start=Position(line=0, character=0), end=Position(line=0, character=12)),
+            message=(
+                "vasp.runtime.invgrp_symmetry: Suggested actions: "
+                "Set ISYM = 0, Set SYMPREC = 1E-6."
+            ),
+            source="vasp-lsp-runtime",
+            data={
+                "suggested_actions": [
+                    {"title": "Set ISYM = 0", "safe_to_auto_apply": True},
+                    {"title": "Set SYMPREC = 1E-6", "safe_to_auto_apply": True},
+                ]
+            },
+        )
+
+        actions = quickfixes.get_code_actions(
+            content,
+            "file:///INCAR",
+            [diagnostic],
+            Range(start=Position(line=0, character=0), end=Position(line=0, character=12)),
+        )
+        titles = [action.title for action in actions]
+
+        assert "Set ISYM = 0" in titles
+        assert "Set SYMPREC = 1E-6" in titles
+        assert all("CHGCAR" not in title and "WAVECAR" not in title for title in titles)
+        assert any(
+            edit.new_text == "ISYM = 0\n"
+            for action in actions
+            for edit in action.edit.changes["document"]
+        )
+
+    def test_runtime_symmetry_action_replaces_existing_incar_setting(self, quickfixes):
+        """Runtime symmetry quick fixes replace existing INCAR tags when present."""
+        content = "ENCUT = 520\nSYMPREC = 1E-4\n"
+        diagnostic = Diagnostic(
+            range=Range(start=Position(line=1, character=0), end=Position(line=1, character=14)),
+            message="vasp.runtime.sgrcon_symmetry: Suggested actions: Set SYMPREC = 1E-6.",
+            source="vasp-lsp-runtime",
+        )
+
+        actions = quickfixes.get_code_actions(
+            content,
+            "file:///INCAR",
+            [diagnostic],
+            Range(start=Position(line=1, character=0), end=Position(line=1, character=14)),
+        )
+        action = next(action for action in actions if action.title == "Set SYMPREC = 1E-6")
+        edit = action.edit.changes["document"][0]
+
+        assert edit.range.start.line == 1
+        assert edit.new_text == "SYMPREC = 1E-6"
+
     def test_similarity_score(self, quickfixes):
         """Test string similarity calculation."""
         # Exact match

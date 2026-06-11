@@ -83,6 +83,22 @@ class QuickFixesProvider:
 
         for diagnostic in diagnostics:
             message = diagnostic.message.lower()
+            runtime_action_titles = self._extract_safe_runtime_action_titles(diagnostic)
+
+            # Runtime recovery actions from VASP logs. Only safe text edits are
+            # materialized here; guarded file operations stay informational.
+            for param_name, value in (("ISYM", "0"), ("SYMPREC", "1E-6")):
+                title = f"Set {param_name} = {value}"
+                fix_key = f"runtime_set_{param_name.lower()}_{value.lower()}"
+                if (
+                    title in runtime_action_titles or title.lower() in message
+                ) and fix_key not in added_fixes:
+                    action = self._create_set_incar_param_action(
+                        lines, diagnostic, param_name, value
+                    )
+                    if action:
+                        actions.append(action)
+                        added_fixes.add(fix_key)
 
             # Fix 1: Add missing SIGMA when ISMEAR >= 0
             if "sigma" in message and "ismear" in message:
@@ -179,6 +195,90 @@ class QuickFixesProvider:
                     actions.append(action)
 
         return actions
+
+    def _extract_safe_runtime_action_titles(self, diagnostic: Diagnostic) -> List[str]:
+        """Extract safe suggested runtime actions carried in Diagnostic.data."""
+        data = getattr(diagnostic, "data", None)
+        if not isinstance(data, dict):
+            return []
+        actions = data.get("suggested_actions", [])
+        if not isinstance(actions, list):
+            return []
+        titles: List[str] = []
+        for action in actions:
+            if not isinstance(action, dict):
+                continue
+            if action.get("safe_to_auto_apply", True) is not True:
+                continue
+            title = action.get("title")
+            if isinstance(title, str):
+                titles.append(title)
+        return titles
+
+    def _create_set_incar_param_action(
+        self,
+        lines: List[str],
+        diagnostic: Diagnostic,
+        param_name: str,
+        value: str,
+    ) -> Optional[CodeAction]:
+        """Create action to set or append an INCAR parameter."""
+        replacement = f"{param_name} = {value}"
+        title = f"Set {replacement}"
+        param_regex = re.compile(rf"^\s*{re.escape(param_name)}\s*=", re.IGNORECASE)
+
+        for line_num, line in enumerate(lines):
+            if param_regex.match(line):
+                return CodeAction(
+                    title=title,
+                    kind=CodeActionKind.QuickFix,
+                    diagnostics=[diagnostic],
+                    edit=WorkspaceEdit(
+                        changes={
+                            "document": [
+                                TextEdit(
+                                    range=Range(
+                                        start=Position(line=line_num, character=0),
+                                        end=Position(line=line_num, character=len(line)),
+                                    ),
+                                    new_text=replacement,
+                                )
+                            ]
+                        }
+                    ),
+                )
+
+        if lines and lines[-1] == "":
+            insert_line = len(lines) - 1
+            insert_character = 0
+            new_text = f"{replacement}\n"
+        elif lines:
+            insert_line = len(lines) - 1
+            insert_character = len(lines[-1])
+            new_text = f"\n{replacement}"
+        else:
+            insert_line = 0
+            insert_character = 0
+            new_text = f"{replacement}\n"
+
+        return CodeAction(
+            title=title,
+            kind=CodeActionKind.QuickFix,
+            diagnostics=[diagnostic],
+            edit=WorkspaceEdit(
+                changes={
+                    "document": [
+                        TextEdit(
+                            range=Range(
+                                start=Position(line=insert_line, character=insert_character),
+                                end=Position(line=insert_line, character=insert_character),
+                            ),
+                            new_text=new_text,
+                        )
+                    ]
+                }
+            ),
+        )
 
     def _create_add_sigma_action(
         self, lines: List[str], diagnostic: Diagnostic
