@@ -3,7 +3,7 @@
 import math
 import os
 import re
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 from urllib.parse import unquote, urlparse
 
 from lsprotocol.types import Diagnostic, DiagnosticSeverity, Position, Range
@@ -12,7 +12,7 @@ from ..parsers.incar_parser import INCARParser
 from ..parsers.kpoints_parser import KPOINTSMode, KPOINTSParser
 from ..parsers.poscar_parser import POSCARParser
 from ..parsers.potcar_parser import POTCARParser
-from ..schemas.incar_tags import get_tag_info
+from ..schemas.incar_tags import CALCULATION_MODES, CalculationMode, get_tag_info
 
 
 class DiagnosticsProvider:
@@ -47,6 +47,98 @@ class DiagnosticsProvider:
             return self._get_kpoints_diagnostics(document_content)
 
         return []
+
+    # ------------------------------------------------------------------
+    # Diagnostic snapshot for agent feedback loops (#18)
+    # ------------------------------------------------------------------
+
+    def get_diagnostics_snapshot(
+        self,
+        document_content: str,
+        document_uri: str,
+        workspace_documents: Optional[Dict[str, str]] = None,
+    ) -> Dict[str, Any]:
+        """Return a structured snapshot of diagnostics suitable for agent consumption.
+
+        Issue #18: live diagnostics snapshots.
+
+        Returns a dict with keys:
+          - uri: the document URI
+          - file_type: INCAR, POSCAR, KPOINTS, or UNKNOWN
+          - diagnostics: list of dicts (message, severity, line, character, source)
+          - summary: counts by severity
+          - calculation_mode: detected mode (if INCAR)
+          - tags: parsed tag-value pairs (if INCAR)
+        """
+        file_type = self._get_file_type(document_uri)
+        diagnostics = self.get_diagnostics(document_content, document_uri, workspace_documents)
+
+        diag_dicts: List[Dict[str, Any]] = []
+        severity_counts: Dict[str, int] = {
+            "error": 0,
+            "warning": 0,
+            "information": 0,
+            "hint": 0,
+        }
+
+        for d in diagnostics:
+            sev = self._severity_to_str(d.severity)
+            severity_counts[sev] = severity_counts.get(sev, 0) + 1
+            diag_dicts.append(
+                {
+                    "message": d.message,
+                    "severity": sev,
+                    "line": d.range.start.line + 1,  # 1-based for agents
+                    "character": d.range.start.character,
+                    "end_line": d.range.end.line + 1,
+                    "end_character": d.range.end.character,
+                    "source": d.source,
+                }
+            )
+
+        snapshot: Dict[str, Any] = {
+            "uri": document_uri,
+            "file_type": file_type,
+            "diagnostics": diag_dicts,
+            "summary": severity_counts,
+        }
+
+        # Add INCAR-specific metadata
+        if file_type == "INCAR":
+            parser = INCARParser(document_content)
+            parser.parse()
+            tags = {}
+            for name, param in parser.get_all_parameters().items():
+                tags[name] = {
+                    "value": param.value,
+                    "line": param.line_number,
+                }
+            snapshot["tags"] = tags
+
+            # Detect calculation mode
+            all_params = parser.get_all_parameters()
+            for mode in CALCULATION_MODES:
+                if self._is_mode_active(mode, all_params):
+                    snapshot["calculation_mode"] = {
+                        "name": mode.name,
+                        "description": mode.description,
+                    }
+                    break
+
+        return snapshot
+
+    @staticmethod
+    def _severity_to_str(severity) -> str:
+        """Convert lsprotocol DiagnosticSeverity to string."""
+        if severity == DiagnosticSeverity.Error:
+            return "error"
+        elif severity == DiagnosticSeverity.Warning:
+            return "warning"
+        elif severity == DiagnosticSeverity.Information:
+            return "information"
+        elif severity == DiagnosticSeverity.Hint:
+            return "hint"
+        return "unknown"
 
     def _get_file_type(self, uri: str) -> str:
         """Determine file type from URI."""
@@ -117,14 +209,25 @@ class DiagnosticsProvider:
             self._check_workspace_consistency(parser, document_uri, workspace_documents)
         )
 
+        # Schema-aware checks: calculation-mode required tags (#21)
+        diagnostics.extend(self._check_calculation_modes(parser))
+
+        # Schema-aware checks: tag conflicts via metadata (#20)
+        diagnostics.extend(self._check_schema_conflicts(parser))
+
         return diagnostics
 
     def _validate_incar_value(self, tag, param, content) -> List[Diagnostic]:
-        """Validate a single INCAR parameter value."""
+        """Validate a single INCAR parameter value against schema metadata.
+
+        Checks: type, enum membership (with case sensitivity), valid range,
+        and reports expected unit for numeric tags.
+        """
         diagnostics = []
         value = param.value
         expected_type = tag.type
 
+        # --- Type checking ---
         if expected_type == "integer" and (not isinstance(value, int) or isinstance(value, bool)):
             diagnostics.append(
                 self._value_type_diagnostic(param, f"{tag.name} expects an integer value.")
@@ -139,37 +242,20 @@ class DiagnosticsProvider:
             diagnostics.append(
                 self._value_type_diagnostic(param, f"{tag.name} expects a boolean value.")
             )
+        elif expected_type == "string" and isinstance(value, list):
+            diagnostics.append(
+                self._value_type_diagnostic(param, f"{tag.name} expects a single string value.")
+            )
         # Array-valued INCAR tags may legitimately contain one scalar value when
         # the structure has one species or one atom, so their length is checked
         # with workspace context instead of treated as a scalar type error here.
 
-        # Check enum values
+        # --- Enum validation ---
         if tag.enum_values and value is not None:
-            str_value = str(value).upper()
-            valid_values = [v.upper() for v in tag.enum_values]
-            if str_value not in valid_values:
-                # Try to match as number
-                try:
-                    num_value = float(value)
-                    if str(int(num_value)) not in valid_values:
-                        diagnostics.append(
-                            Diagnostic(
-                                range=Range(
-                                    start=Position(
-                                        line=param.line_number - 1,
-                                        character=param.column_start,
-                                    ),
-                                    end=Position(
-                                        line=param.line_number - 1,
-                                        character=param.column_end,
-                                    ),
-                                ),
-                                message=f"Invalid value for {tag.name}. Allowed: {', '.join(tag.enum_values)}",
-                                severity=DiagnosticSeverity.Warning,
-                                source="vasp-lsp",
-                            )
-                        )
-                except (ValueError, TypeError):
+            if tag.case_sensitive:
+                # Case-sensitive enum check: exact match required
+                str_value = str(value)
+                if str_value not in tag.enum_values:
                     diagnostics.append(
                         Diagnostic(
                             range=Range(
@@ -182,15 +268,69 @@ class DiagnosticsProvider:
                                     character=param.column_end,
                                 ),
                             ),
-                            message=f"Invalid value for {tag.name}. Allowed: {', '.join(tag.enum_values)}",
-                            severity=DiagnosticSeverity.Warning,
+                            message=(
+                                f"Invalid value '{str_value}' for {tag.name}. "
+                                f"Allowed (case-sensitive): {', '.join(tag.enum_values)}"
+                            ),
+                            severity=DiagnosticSeverity.Error,
                             source="vasp-lsp",
                         )
                     )
+            else:
+                # Case-insensitive enum check (legacy behavior)
+                str_value = str(value).upper()
+                valid_values = [v.upper() for v in tag.enum_values]
+                if str_value not in valid_values:
+                    # Try to match as number
+                    try:
+                        num_value = float(value)
+                        if str(int(num_value)) not in valid_values:
+                            diagnostics.append(
+                                Diagnostic(
+                                    range=Range(
+                                        start=Position(
+                                            line=param.line_number - 1,
+                                            character=param.column_start,
+                                        ),
+                                        end=Position(
+                                            line=param.line_number - 1,
+                                            character=param.column_end,
+                                        ),
+                                    ),
+                                    message=(
+                                        f"Invalid value for {tag.name}. "
+                                        f"Allowed: {', '.join(tag.enum_values)}"
+                                    ),
+                                    severity=DiagnosticSeverity.Warning,
+                                    source="vasp-lsp",
+                                )
+                            )
+                    except (ValueError, TypeError):
+                        diagnostics.append(
+                            Diagnostic(
+                                range=Range(
+                                    start=Position(
+                                        line=param.line_number - 1,
+                                        character=param.column_start,
+                                    ),
+                                    end=Position(
+                                        line=param.line_number - 1,
+                                        character=param.column_end,
+                                    ),
+                                ),
+                                message=(
+                                    f"Invalid value for {tag.name}. "
+                                    f"Allowed: {', '.join(tag.enum_values)}"
+                                ),
+                                severity=DiagnosticSeverity.Warning,
+                                source="vasp-lsp",
+                            )
+                        )
 
-        # Check range for numeric values
+        # --- Range validation for numeric values ---
         if tag.valid_range and isinstance(value, (int, float)):
             min_val, max_val = tag.valid_range
+            unit_hint = f" ({tag.unit})" if tag.unit else ""
             if min_val is not None and value < min_val:
                 diagnostics.append(
                     Diagnostic(
@@ -200,7 +340,9 @@ class DiagnosticsProvider:
                             ),
                             end=Position(line=param.line_number - 1, character=param.column_end),
                         ),
-                        message=f"Value {value} is below minimum {min_val} for {tag.name}",
+                        message=(
+                            f"Value {value} is below minimum {min_val} for {tag.name}{unit_hint}."
+                        ),
                         severity=DiagnosticSeverity.Warning,
                         source="vasp-lsp",
                     )
@@ -214,7 +356,9 @@ class DiagnosticsProvider:
                             ),
                             end=Position(line=param.line_number - 1, character=param.column_end),
                         ),
-                        message=f"Value {value} is above maximum {max_val} for {tag.name}",
+                        message=(
+                            f"Value {value} is above maximum {max_val} for {tag.name}{unit_hint}."
+                        ),
                         severity=DiagnosticSeverity.Warning,
                         source="vasp-lsp",
                     )
@@ -539,6 +683,114 @@ class DiagnosticsProvider:
                     )
                 )
 
+        return diagnostics
+
+    # ------------------------------------------------------------------
+    # Schema-aware static checks (#20, #21)
+    # ------------------------------------------------------------------
+
+    def _check_calculation_modes(self, parser: INCARParser) -> List[Diagnostic]:
+        """Detect the active VASP calculation mode and warn about missing required tags.
+
+        Issue #21: validate required sections.
+        """
+        diagnostics: List[Diagnostic] = []
+        all_params = parser.get_all_parameters()
+
+        for mode in CALCULATION_MODES:
+            if not self._is_mode_active(mode, all_params):
+                continue
+            # Mode is active — check for missing required tags
+            missing = [tag for tag in mode.required_tags if tag not in all_params]
+            if missing:
+                anchor = next(iter(all_params.values()), None)
+                tag_list = ", ".join(missing)
+                diagnostics.append(
+                    self._parameter_diagnostic(
+                        anchor,
+                        f"Detected {mode.name} mode ({mode.description}). "
+                        f"Missing recommended tags: {tag_list}",
+                        DiagnosticSeverity.Information,
+                    )
+                )
+
+            # Also warn about recommended tags that are not set
+            missing_recommended = [tag for tag in mode.recommended_tags if tag not in all_params]
+            if missing_recommended:
+                anchor = next(iter(all_params.values()), None)
+                tag_list = ", ".join(missing_recommended)
+                diagnostics.append(
+                    self._parameter_diagnostic(
+                        anchor,
+                        f"For {mode.name} mode, consider setting: {tag_list}",
+                        (
+                            DiagnosticSeverity.Hint
+                            if hasattr(DiagnosticSeverity, "Hint")
+                            else DiagnosticSeverity.Information
+                        ),
+                    )
+                )
+            break  # Only report the first matching mode
+
+        return diagnostics
+
+    def _is_mode_active(self, mode: CalculationMode, all_params: dict) -> bool:
+        """Return True if the given calculation mode is likely active."""
+        for tag_name, expected_values in mode.detector_tags.items():
+            if tag_name not in all_params:
+                return False
+            if expected_values is not None:
+                val = all_params[tag_name].value
+                # Handle boolean True
+                if isinstance(expected_values, list) and True in expected_values:
+                    if val is True:
+                        continue
+                if isinstance(expected_values, list):
+                    try:
+                        if isinstance(val, bool):
+                            return False
+                        if int(val) not in [int(v) for v in expected_values if v is not True]:
+                            return False
+                    except (ValueError, TypeError):
+                        return False
+        # At least one detector tag must be present
+        return bool(mode.detector_tags)
+
+    def _check_schema_conflicts(self, parser: INCARParser) -> List[Diagnostic]:
+        """Check for tag conflicts declared in schema metadata.
+
+        Issue #20: schema-aware static checks.
+        """
+        diagnostics: List[Diagnostic] = []
+        all_params = parser.get_all_parameters()
+
+        for tag_name, param in all_params.items():
+            tag = get_tag_info(tag_name)
+            if tag is None or not tag.conflicts_with:
+                continue
+            for conflict_name in tag.conflicts_with:
+                conflict_param = all_params.get(conflict_name)
+                if conflict_param is None:
+                    continue
+                # Use the *later* parameter as the diagnostic anchor
+                if param.line_number > conflict_param.line_number:
+                    anchor = param
+                else:
+                    anchor = conflict_param
+                diagnostics.append(
+                    Diagnostic(
+                        range=Range(
+                            start=Position(line=anchor.line_number - 1, character=0),
+                            end=Position(
+                                line=anchor.line_number - 1,
+                                character=len(anchor.raw_line),
+                            ),
+                        ),
+                        message=f"{tag_name} conflicts with {conflict_name}. Prefer NCORE.",
+                        severity=DiagnosticSeverity.Warning,
+                        source="vasp-lsp",
+                    )
+                )
         return diagnostics
 
     def _parameter_warning(self, param, message: str) -> Diagnostic:

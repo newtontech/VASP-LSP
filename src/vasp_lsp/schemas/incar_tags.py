@@ -4,7 +4,7 @@ This module contains structured metadata for VASP INCAR parameters,
 enabling autocomplete, validation, and documentation features.
 """
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional
 
 
@@ -22,6 +22,8 @@ class INCARTag:
     requires: Optional[List[str]] = None  # Related tags that should be set
     conflicts_with: Optional[List[str]] = None  # Tags that conflict with this one
     version_note: Optional[str] = None  # Version-specific notes
+    unit: Optional[str] = None  # e.g. "eV", "eV/Å", "Å", "fs", "Å⁻¹"
+    case_sensitive: bool = False  # Whether string enum values are case-sensitive
 
     def to_markdown(self) -> str:
         """Generate markdown documentation for this tag."""
@@ -44,6 +46,76 @@ class INCARTag:
         return "\n".join(lines)
 
 
+# ---------------------------------------------------------------------------
+# Calculation-mode definitions (#21 required-sections)
+# ---------------------------------------------------------------------------
+
+
+@dataclass
+class CalculationMode:
+    """A VASP calculation mode with its required and recommended tags."""
+
+    name: str
+    description: str
+    required_tags: List[str] = field(default_factory=list)
+    recommended_tags: List[str] = field(default_factory=list)
+    detector_tags: Dict[str, Any] = field(default_factory=dict)
+    """Tag-value pairs that, when present, indicate this mode."""
+
+
+CALCULATION_MODES: List[CalculationMode] = [
+    CalculationMode(
+        name="relaxation",
+        description="Structural relaxation (ionic minimization)",
+        required_tags=["IBRION", "NSW", "EDIFFG"],
+        recommended_tags=["ISIF", "POTIM", "EDIFF", "ENCUT"],
+        detector_tags={"IBRION": [1, 2], "NSW": None},
+    ),
+    CalculationMode(
+        name="molecular_dynamics",
+        description="Molecular dynamics simulation",
+        required_tags=["IBRION", "NSW", "POTIM"],
+        recommended_tags=["SMASS", "TEBEG", "TEEND"],
+        detector_tags={"IBRION": [0], "NSW": None},
+    ),
+    CalculationMode(
+        name="static",
+        description="Static (single-point) calculation",
+        required_tags=[],
+        recommended_tags=["ENCUT", "EDIFF"],
+        detector_tags={"NSW": [0], "IBRION": [-1]},
+    ),
+    CalculationMode(
+        name="band_structure",
+        description="Band structure calculation (non-self-consistent)",
+        required_tags=["ICHARG"],
+        recommended_tags=["LORBIT", "NBANDS"],
+        detector_tags={"ICHARG": [11, 12]},
+    ),
+    CalculationMode(
+        name="phonon",
+        description="Phonon / finite-difference calculation",
+        required_tags=["IBRION", "POTIM"],
+        recommended_tags=["EDIFF", "ENCUT", "NSW"],
+        detector_tags={"IBRION": [5, 6, 7, 8]},
+    ),
+    CalculationMode(
+        name="hybrid",
+        description="Hybrid functional calculation",
+        required_tags=["LHFCALC"],
+        recommended_tags=["HFSCREEN", "PRECFOCK", "ALGO", "NCORE"],
+        detector_tags={"LHFCALC": [True]},
+    ),
+    CalculationMode(
+        name="dft_u",
+        description="DFT+U calculation",
+        required_tags=["LDAU", "LDAUTYPE", "LDAUL", "LDAUU"],
+        recommended_tags=["LDAUJ"],
+        detector_tags={"LDAU": [True]},
+    ),
+]
+
+
 # INCAR tag definitions
 INCAR_TAGS: Dict[str, INCARTag] = {
     # Electronic structure
@@ -54,6 +126,7 @@ INCAR_TAGS: Dict[str, INCARTag] = {
         description="Cutoff energy for the plane-wave basis set in eV. If not specified, VASP uses the maximum ENMAX from POTCAR files.",
         category="electronic",
         valid_range=(0.0, None),
+        unit="eV",
     ),
     "ISMEAR": INCARTag(
         name="ISMEAR",
@@ -71,6 +144,7 @@ INCAR_TAGS: Dict[str, INCARTag] = {
         category="electronic",
         valid_range=(0.0, None),
         requires=["ISMEAR"],
+        unit="eV",
     ),
     "EDIFF": INCARTag(
         name="EDIFF",
@@ -79,6 +153,7 @@ INCAR_TAGS: Dict[str, INCARTag] = {
         description="Convergence criterion for electronic self-consistency. The relaxation stops when the total energy change between two steps is smaller than EDIFF.",
         category="electronic",
         valid_range=(0.0, None),
+        unit="eV",
     ),
     "NELM": INCARTag(
         name="NELM",
@@ -117,6 +192,7 @@ INCAR_TAGS: Dict[str, INCARTag] = {
             "scGW",
             "BSE",
         ],
+        case_sensitive=True,
     ),
     "ISPIN": INCARTag(
         name="ISPIN",
@@ -173,6 +249,7 @@ INCAR_TAGS: Dict[str, INCARTag] = {
         default=1e-3,
         description="Convergence criterion for ionic relaxation. If EDIFFG < 0, relaxation stops when all forces are smaller than |EDIFFG| in eV/Å. If EDIFFG > 0, relaxation stops when the energy change is smaller than EDIFFG in eV.",
         category="ionic",
+        unit="eV (if positive) or eV/Å (if negative)",
     ),
     "POTIM": INCARTag(
         name="POTIM",
@@ -181,6 +258,7 @@ INCAR_TAGS: Dict[str, INCARTag] = {
         description="Scaling factor for the forces or time step for MD. For IBRION=2: trial step size for translation. For IBRION=1: step width scaling. For IBRION=0: time step in fs.",
         category="ionic",
         valid_range=(0.0, None),
+        unit="fs (for MD) or Å (for relaxation)",
     ),
     "ISIF": INCARTag(
         name="ISIF",
@@ -205,6 +283,7 @@ INCAR_TAGS: Dict[str, INCARTag] = {
         description="Generate an automatic k-point mesh from a target reciprocal-space spacing. Do not use together with an explicit KPOINTS file.",
         category="electronic",
         valid_range=(0.0, None),
+        unit="Å⁻¹",
     ),
     # Parallelization
     "NCORE": INCARTag(
@@ -298,6 +377,7 @@ INCAR_TAGS: Dict[str, INCARTag] = {
         category="electronic",
         valid_range=(0.0, None),
         requires=["LHFCALC"],
+        unit="Å⁻¹",
     ),
     "PRECFOCK": INCARTag(
         name="PRECFOCK",
@@ -307,6 +387,7 @@ INCAR_TAGS: Dict[str, INCARTag] = {
         category="electronic",
         enum_values=["Low", "Medium", "Normal", "Fast", "Accurate"],
         requires=["LHFCALC"],
+        case_sensitive=True,
     ),
     # Van der Waals corrections
     "IVDW": INCARTag(
@@ -422,6 +503,7 @@ INCAR_TAGS: Dict[str, INCARTag] = {
         description="Determines the precision mode. Options: Normal (default), Accurate (more accurate forces), Single (faster, less accurate), Fast (deprecated).",
         category="electronic",
         enum_values=["Normal", "Accurate", "Single", "Fast"],
+        case_sensitive=True,
     ),
     "ISTART": INCARTag(
         name="ISTART",
