@@ -12,6 +12,7 @@ from ..parsers.incar_parser import INCARParser
 from ..parsers.kpoints_parser import KPOINTSMode, KPOINTSParser
 from ..parsers.poscar_parser import POSCARParser
 from ..parsers.potcar_parser import POTCARParser
+from ..parsers.vasp_log_parser import VASPLogDiagnostic, VASPLogParser
 from ..schemas.incar_tags import CALCULATION_MODES, CalculationMode, get_tag_info
 
 
@@ -45,6 +46,8 @@ class DiagnosticsProvider:
             return self._get_poscar_diagnostics(document_content)
         elif file_type == "KPOINTS":
             return self._get_kpoints_diagnostics(document_content)
+        elif file_type == "VASP_LOG":
+            return self._get_vasp_log_diagnostics(document_content, document_uri)
 
         return []
 
@@ -84,17 +87,30 @@ class DiagnosticsProvider:
         for d in diagnostics:
             sev = self._severity_to_str(d.severity)
             severity_counts[sev] = severity_counts.get(sev, 0) + 1
-            diag_dicts.append(
-                {
-                    "message": d.message,
-                    "severity": sev,
-                    "line": d.range.start.line + 1,  # 1-based for agents
-                    "character": d.range.start.character,
-                    "end_line": d.range.end.line + 1,
-                    "end_character": d.range.end.character,
-                    "source": d.source,
-                }
-            )
+            diag_dict: Dict[str, Any] = {
+                "message": d.message,
+                "severity": sev,
+                "line": d.range.start.line + 1,  # 1-based for agents
+                "character": d.range.start.character,
+                "end_line": d.range.end.line + 1,
+                "end_character": d.range.end.character,
+                "source": d.source,
+            }
+            code = getattr(d, "code", None)
+            if code is not None:
+                diag_dict["code"] = str(code)
+            data = getattr(d, "data", None)
+            if isinstance(data, dict):
+                for key in (
+                    "confidence",
+                    "category",
+                    "related_files",
+                    "suggested_actions",
+                    "safe_to_auto_apply",
+                ):
+                    if key in data:
+                        diag_dict[key] = data[key]
+            diag_dicts.append(diag_dict)
 
         snapshot: Dict[str, Any] = {
             "uri": document_uri,
@@ -142,16 +158,82 @@ class DiagnosticsProvider:
 
     def _get_file_type(self, uri: str) -> str:
         """Determine file type from URI."""
-        filename = uri.split("/")[-1].upper()
+        path = unquote(urlparse(uri).path) if "://" in uri else uri
+        filename = path.split("/")[-1]
+        upper_filename = filename.upper()
 
-        if "INCAR" in filename:
+        if "INCAR" in upper_filename:
             return "INCAR"
-        if "POSCAR" in filename or "CONTCAR" in filename:
+        if "POSCAR" in upper_filename or "CONTCAR" in upper_filename:
             return "POSCAR"
-        if "KPOINTS" in filename:
+        if "KPOINTS" in upper_filename:
             return "KPOINTS"
+        if self._is_vasp_log_filename(filename):
+            return "VASP_LOG"
 
         return "UNKNOWN"
+
+    def _is_vasp_log_filename(self, filename: str) -> bool:
+        """Return whether a filename is a VASP runtime log."""
+        upper_filename = filename.upper()
+        if upper_filename in {"OUTCAR", "OSZICAR", "STDOUT", "STDERR", "VASP.OUT"}:
+            return True
+        if upper_filename.startswith("SLURM-") and upper_filename.endswith(".OUT"):
+            return True
+        return upper_filename.endswith(".LOG")
+
+    def _get_vasp_log_diagnostics(self, content: str, document_uri: str) -> List[Diagnostic]:
+        """Get diagnostics for VASP runtime logs."""
+        return [
+            self._runtime_log_diagnostic_to_lsp(runtime_diagnostic)
+            for runtime_diagnostic in VASPLogParser(content, document_uri).parse()
+        ]
+
+    def _runtime_log_diagnostic_to_lsp(self, runtime_diagnostic: VASPLogDiagnostic) -> Diagnostic:
+        action_titles = [action.title for action in runtime_diagnostic.suggested_actions]
+        action_suffix = ""
+        if action_titles:
+            action_suffix = f" Suggested actions: {', '.join(action_titles)}."
+        line_text = runtime_diagnostic.line_text.strip()
+        end_character = max(len(runtime_diagnostic.line_text), 1)
+        return Diagnostic(
+            range=Range(
+                start=Position(line=runtime_diagnostic.line_index, character=0),
+                end=Position(line=runtime_diagnostic.line_index, character=end_character),
+            ),
+            message=(
+                f"{runtime_diagnostic.id}: VASP runtime log matched '{line_text}'."
+                f"{action_suffix}"
+            ),
+            severity=self._runtime_severity_to_lsp(runtime_diagnostic.severity),
+            source="vasp-lsp-runtime",
+            code=runtime_diagnostic.id,
+            data={
+                "confidence": runtime_diagnostic.confidence,
+                "category": runtime_diagnostic.category,
+                "related_files": list(runtime_diagnostic.related_files),
+                "suggested_actions": [
+                    {
+                        "title": action.title,
+                        "safe_to_auto_apply": action.safe_to_auto_apply,
+                        "target_file": action.target_file,
+                    }
+                    for action in runtime_diagnostic.suggested_actions
+                ],
+                "safe_to_auto_apply": all(
+                    action.safe_to_auto_apply for action in runtime_diagnostic.suggested_actions
+                ),
+            },
+        )
+
+    def _runtime_severity_to_lsp(self, severity: str) -> DiagnosticSeverity:
+        if severity == "error":
+            return DiagnosticSeverity.Error
+        if severity == "warning":
+            return DiagnosticSeverity.Warning
+        if severity == "hint":
+            return DiagnosticSeverity.Hint
+        return DiagnosticSeverity.Information
 
     def _get_incar_diagnostics(
         self,
