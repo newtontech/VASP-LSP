@@ -7,9 +7,10 @@ import json
 from pathlib import Path
 from typing import Any
 
-from .rich_diagnostics import agent_check_payload
+from .rich_diagnostics import agent_check_payload, diagnostic_to_dict
 
 SOFTWARE = "vasp"
+PLAN24_SCHEMA_VERSION = "vasp-lsp.plan24.v1"
 
 
 def _file_type(path: Path) -> str:
@@ -31,27 +32,218 @@ def _collect_diagnostics(path: Path) -> list[Any]:
 def check_path(path: Path) -> dict[str, Any]:
     uri = path.resolve().as_uri()
     diagnostics = _collect_diagnostics(path)
-    return agent_check_payload(
-        software=SOFTWARE,
-        uri=uri,
-        operation="check",
-        diagnostics=diagnostics,
-        path=str(path),
-        file_type=_file_type(path),
+    return dict(
+        agent_check_payload(
+            software=SOFTWARE,
+            uri=uri,
+            operation="check",
+            diagnostics=diagnostics,
+            path=str(path),
+            file_type=_file_type(path),
+        )
     )
+
+
+def check_target(path: Path) -> dict[str, Any]:
+    """Build the PLAN24 JSON payload for an input file or calculation directory."""
+    diagnostics_by_path = _collect_plan24_check_diagnostics(path)
+    return _plan24_payload("check", [path], diagnostics_by_path)
+
+
+def explain_logs(paths: list[Path], workdir: Path | None = None) -> dict[str, Any]:
+    """Build the PLAN24 JSON payload for one or more runtime logs."""
+    diagnostics_by_path = _collect_plan24_explain_diagnostics(paths, workdir)
+    return _plan24_payload("explain", paths, diagnostics_by_path)
+
+
+def _collect_plan24_check_diagnostics(path: Path) -> list[tuple[Path, list[Any]]]:
+    from .features.diagnostics import DiagnosticsProvider
+
+    provider = DiagnosticsProvider()
+    if path.is_dir():
+        workspace_documents = _workspace_documents(path)
+        results: list[tuple[Path, list[Any]]] = []
+        for candidate in sorted(path.iterdir()):
+            if not candidate.is_file() or candidate.name.startswith("."):
+                continue
+            file_type = provider._get_file_type(candidate.resolve().as_uri())
+            if file_type == "UNKNOWN":
+                continue
+            text = _read_text(candidate)
+            results.append(
+                (
+                    candidate,
+                    list(
+                        provider.get_diagnostics(
+                            text,
+                            candidate.resolve().as_uri(),
+                            workspace_documents,
+                        )
+                    ),
+                )
+            )
+        return results
+
+    workspace_documents = _workspace_documents(path.parent)
+    return [
+        (
+            path,
+            list(
+                provider.get_diagnostics(
+                    _read_text(path),
+                    path.resolve().as_uri(),
+                    workspace_documents,
+                )
+            ),
+        )
+    ]
+
+
+def _collect_plan24_explain_diagnostics(
+    paths: list[Path], workdir: Path | None = None
+) -> list[tuple[Path, list[Any]]]:
+    from .features.diagnostics import DiagnosticsProvider
+
+    provider = DiagnosticsProvider()
+    workspace_documents = _workspace_documents(workdir) if workdir else {}
+    results: list[tuple[Path, list[Any]]] = []
+    for path in paths:
+        results.append(
+            (
+                path,
+                list(
+                    provider.get_diagnostics(
+                        _read_text(path),
+                        path.resolve().as_uri(),
+                        workspace_documents,
+                    )
+                ),
+            )
+        )
+    return results
+
+
+def _workspace_documents(directory: Path) -> dict[str, str]:
+    if not directory.exists() or not directory.is_dir():
+        return {}
+    documents: dict[str, str] = {}
+    for path in sorted(directory.iterdir()):
+        if path.is_file() and not path.name.startswith("."):
+            documents[path.resolve().as_uri()] = _read_text(path)
+    return documents
+
+
+def _read_text(path: Path) -> str:
+    return path.read_text(encoding="utf-8", errors="ignore")
+
+
+def _plan24_payload(
+    operation: str,
+    sources: list[Path],
+    diagnostics_by_path: list[tuple[Path, list[Any]]],
+) -> dict[str, Any]:
+    diagnostics = [
+        _plan24_diagnostic(item, source_path)
+        for source_path, source_diagnostics in diagnostics_by_path
+        for item in source_diagnostics
+    ]
+    diagnostics.sort(
+        key=lambda item: (
+            item["source_file"],
+            item["range"]["start"]["line"],
+            item["range"]["start"]["character"],
+            item["id"],
+            item["message"],
+        )
+    )
+    blocking_count = sum(1 for item in diagnostics if item["blocking"])
+    return {
+        "schema_version": PLAN24_SCHEMA_VERSION,
+        "operation": operation,
+        "ok": blocking_count == 0,
+        "software": SOFTWARE,
+        "source": [str(path) for path in sources],
+        "diagnostics": diagnostics,
+        "summary": {
+            "count": len(diagnostics),
+            "blocking": blocking_count,
+            "errors": sum(1 for item in diagnostics if item["severity"] == "error"),
+            "warnings": sum(1 for item in diagnostics if item["severity"] == "warning"),
+        },
+    }
+
+
+def _plan24_diagnostic(diagnostic: Any, source_path: Path) -> dict[str, Any]:
+    rich = diagnostic_to_dict(
+        diagnostic,
+        software=SOFTWARE,
+        path=str(source_path),
+        file_type=_file_type(source_path),
+    )
+    data = getattr(diagnostic, "data", None)
+    if not isinstance(data, dict):
+        data = {}
+    suggested_actions = data.get("suggested_actions")
+    if not isinstance(suggested_actions, list):
+        suggested_actions = [
+            {"title": hint, "safe_to_auto_apply": True, "target_file": _file_type(source_path)}
+            for hint in rich.get("fix_hints", [])
+        ]
+    related_files = data.get("related_files", [])
+    if not isinstance(related_files, list):
+        related_files = []
+    return {
+        "id": rich["code"],
+        "severity": rich["severity"],
+        "message": rich["message"],
+        "source": rich["source"],
+        "source_file": str(source_path),
+        "file_type": rich["file_type"],
+        "range": rich["range"],
+        "confidence": data.get("confidence", rich["confidence"]),
+        "category": data.get("category", rich["category"]),
+        "related_files": related_files,
+        "suggested_actions": suggested_actions,
+        "blocking": rich["blocking"],
+    }
 
 
 def _empty_operation(path: Path, operation: str) -> dict[str, Any]:
-    payload = agent_check_payload(
-        software=SOFTWARE,
-        uri=path.resolve().as_uri(),
-        operation=operation,
-        diagnostics=[],
-        path=str(path),
-        file_type=_file_type(path),
+    payload = dict(
+        agent_check_payload(
+            software=SOFTWARE,
+            uri=path.resolve().as_uri(),
+            operation=operation,
+            diagnostics=[],
+            path=str(path),
+            file_type=_file_type(path),
+        )
     )
     payload["summary"]["note"] = f"{operation} is reserved by the Diagnostic Engine v1 CLI contract"
     return payload
+
+
+def check_main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(prog="vasp-lsp-check")
+    parser.add_argument("path", type=Path)
+    parser.add_argument("--format", choices=["json"], default="json")
+    parser.add_argument("--fail-on-blocking", action="store_true")
+    args = parser.parse_args(argv)
+    payload = check_target(args.path)
+    print(json.dumps(payload, indent=2, sort_keys=True))
+    return 1 if args.fail_on_blocking and not payload["ok"] else 0
+
+
+def explain_main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(prog="vasp-lsp-explain")
+    parser.add_argument("logs", nargs="+", type=Path)
+    parser.add_argument("--format", choices=["json"], default="json")
+    parser.add_argument("--workdir", type=Path)
+    parser.add_argument("--fail-on-blocking", action="store_true")
+    args = parser.parse_args(argv)
+    payload = explain_logs(args.logs, args.workdir)
+    print(json.dumps(payload, indent=2, sort_keys=True))
+    return 1 if args.fail_on_blocking and not payload["ok"] else 0
 
 
 def main(argv: list[str] | None = None) -> int:
