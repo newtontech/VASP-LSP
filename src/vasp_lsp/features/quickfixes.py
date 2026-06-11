@@ -87,7 +87,11 @@ class QuickFixesProvider:
 
             # Runtime recovery actions from VASP logs. Only safe text edits are
             # materialized here; guarded file operations stay informational.
-            for param_name, value in (("ISYM", "0"), ("SYMPREC", "1E-6")):
+            for param_name, value in (
+                ("ISYM", "0"),
+                ("SYMPREC", "1E-6"),
+                ("ALGO", "Normal"),
+            ):
                 title = f"Set {param_name} = {value}"
                 fix_key = f"runtime_set_{param_name.lower()}_{value.lower()}"
                 if (

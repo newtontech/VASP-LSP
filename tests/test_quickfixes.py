@@ -214,6 +214,41 @@ NPAR = 2"""
         assert edit.range.start.line == 1
         assert edit.new_text == "SYMPREC = 1E-6"
 
+    def test_runtime_electronic_action_sets_algo_without_unsafe_file_edits(self, quickfixes):
+        """Electronic-minimization runtime hints only expose safe INCAR edits."""
+        content = "ENCUT = 520\nALGO = Fast\n"
+        diagnostic = Diagnostic(
+            range=Range(start=Position(line=1, character=0), end=Position(line=1, character=11)),
+            message=(
+                "vasp.runtime.edddav_zhegv: Suggested actions: Set ALGO = Normal, "
+                "Suggest removing CHGCAR/WAVECAR after confirmation."
+            ),
+            source="vasp-lsp-runtime",
+            data={
+                "suggested_actions": [
+                    {"title": "Set ALGO = Normal", "safe_to_auto_apply": True},
+                    {
+                        "title": "Suggest removing CHGCAR/WAVECAR after confirmation",
+                        "safe_to_auto_apply": False,
+                    },
+                ]
+            },
+        )
+
+        actions = quickfixes.get_code_actions(
+            content,
+            "file:///INCAR",
+            [diagnostic],
+            Range(start=Position(line=1, character=0), end=Position(line=1, character=11)),
+        )
+        titles = [action.title for action in actions]
+        action = next(action for action in actions if action.title == "Set ALGO = Normal")
+        edit = action.edit.changes["document"][0]
+
+        assert "Suggest removing CHGCAR/WAVECAR after confirmation" not in titles
+        assert edit.range.start.line == 1
+        assert edit.new_text == "ALGO = Normal"
+
     def test_similarity_score(self, quickfixes):
         """Test string similarity calculation."""
         # Exact match
