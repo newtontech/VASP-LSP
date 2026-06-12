@@ -7,8 +7,8 @@ import json
 from pathlib import Path
 from typing import Any
 
-from .rich_diagnostics import agent_check_payload, diagnostic_to_dict
 from .agent_operations import operation_path, with_capabilities
+from .rich_diagnostics import agent_check_payload, diagnostic_to_dict
 
 SOFTWARE = "vasp"
 PLAN24_SCHEMA_VERSION = "vasp-lsp.plan24.v1"
@@ -209,8 +209,12 @@ def _plan24_diagnostic(diagnostic: Any, source_path: Path) -> dict[str, Any]:
     }
 
 
-
-def _operation_payload(path: Path, operation: str, line: int = 0, character: int = 0) -> dict[str, Any]:
+def _operation_payload(
+    path: Path,
+    operation: str,
+    line: int = 0,
+    character: int = 0,
+) -> dict[str, Any]:
     return operation_path(
         path,
         operation,
@@ -251,8 +255,18 @@ def main(argv: list[str] | None = None) -> int:
         sub = subparsers.add_parser(operation)
         sub.add_argument("path", type=Path)
         sub.add_argument("--format", choices=["json"], default="json")
-        sub.add_argument("--line", type=int, default=0, help="0-based line for position-aware operations.")
-        sub.add_argument("--character", type=int, default=0, help="0-based character for position-aware operations.")
+        sub.add_argument(
+            "--line",
+            type=int,
+            default=0,
+            help="0-based line for position-aware operations.",
+        )
+        sub.add_argument(
+            "--character",
+            type=int,
+            default=0,
+            help="0-based character for position-aware operations.",
+        )
         if operation == "check":
             sub.add_argument("--fail-on-blocking", action="store_true")
     args = parser.parse_args(argv)
