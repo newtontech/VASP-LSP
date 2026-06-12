@@ -65,14 +65,16 @@ def test_validate_patterns_rejects_invalid_metadata() -> None:
     )
     for kwargs, expected in invalid_cases:
         try:
-            validate_vasp_error_patterns((VASPErrorPattern(**kwargs),))
+            validate_vasp_error_patterns((VASPErrorPattern(**kwargs),))  # type: ignore[arg-type]
         except ValueError as exc:
             assert expected in str(exc)
         else:
             raise AssertionError(f"{expected} should fail validation")
 
     try:
-        validate_vasp_error_patterns((VASPErrorPattern(**{**base, "patterns": ("(",)}),))
+        validate_vasp_error_patterns(
+            (VASPErrorPattern(**{**base, "patterns": ("(",)}),)  # type: ignore[arg-type]
+        )
     except Exception as exc:
         assert "missing" in str(exc).lower() or "unterminated" in str(exc).lower()
     else:
