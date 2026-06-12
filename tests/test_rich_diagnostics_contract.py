@@ -6,6 +6,7 @@ from types import SimpleNamespace
 
 import pytest
 
+from vasp_lsp import agent_operations as ops
 from vasp_lsp import tool
 from vasp_lsp.agent_lsp import AgentLSP
 from vasp_lsp.rich_diagnostics import (
@@ -213,3 +214,200 @@ def test_tool_collect_diagnostics_and_file_type_smoke(tmp_path) -> None:
     assert tool._file_type(input_path) == "INCAR"
     assert tool._file_type(tmp_path / "calc.vasp") == "vasp"
     assert tool._file_type(tmp_path / "README") == "readme"
+
+
+def test_agent_operations_provider_and_generic_paths(
+    monkeypatch: pytest.MonkeyPatch, tmp_path
+) -> None:
+    input_path = tmp_path / "INCAR"
+    input_path.write_text(
+        "SYSTEM = test\nENCUT = 300\n&CONTROL\nmethod fast\n",
+        encoding="utf-8",
+    )
+    diagnostic = {
+        "code": "VASP001",
+        "severity": "error",
+        "message": "unknown INCAR keyword",
+        "range": {
+            "start": {"line": 1, "character": 0},
+            "end": {"line": 1, "character": 5},
+        },
+        "source": "test",
+        "fix_hints": ["Use a documented VASP keyword"],
+        "manual_ref": "VASP INCAR manual",
+        "blocking": True,
+    }
+
+    fake_completion = SimpleNamespace(
+        completion_items=lambda path, text, file_type: [
+            {"label": "ENCUT", "detail": "Plane-wave cutoff"},
+            {"name": "ENCUT", "detail": "duplicate"},
+            {"insertText": "ISMEAR", "documentation": "Smearing method"},
+        ]
+    )
+    fake_hover = SimpleNamespace(
+        hover=lambda token, path, text, file_type: f"doc:{token}" if token == "ENCUT" else None
+    )
+    fake_symbols = SimpleNamespace(
+        document_symbols=lambda path, text: [
+            {"name": "INCAR", "line": 0, "column": 1, "detail": "input"},
+            SimpleNamespace(name="ObjectSymbol", kind="symbol"),
+        ]
+    )
+
+    def fake_import(module_name: str):
+        if module_name.endswith(".completion"):
+            return fake_completion
+        if module_name.endswith(".hover"):
+            return fake_hover
+        if module_name.endswith(".symbols"):
+            return fake_symbols
+        return None
+
+    monkeypatch.setattr(ops, "_import_optional", fake_import)
+
+    complete_payload = ops.operation_path(
+        input_path,
+        "complete",
+        software="vasp",
+        file_type_func=tool._file_type,
+        collect_diagnostics=lambda path: [diagnostic],
+    )
+    assert [item["label"] for item in complete_payload["items"]] == ["ENCUT", "ISMEAR"]
+    assert complete_payload["capabilities"]["status"] == "available"
+
+    hover_payload = ops.operation_path(
+        input_path,
+        "hover",
+        software="vasp",
+        file_type_func=tool._file_type,
+        collect_diagnostics=lambda path: [diagnostic],
+        line=1,
+        character=2,
+    )
+    assert hover_payload["contents"] == "doc:ENCUT"
+
+    symbols_payload = ops.operation_path(
+        input_path,
+        "symbols",
+        software="vasp",
+        file_type_func=tool._file_type,
+        collect_diagnostics=lambda path: [diagnostic],
+    )
+    assert [item["name"] for item in symbols_payload["items"]] == [
+        "INCAR",
+        "ObjectSymbol",
+    ]
+
+    context_payload = ops.operation_path(
+        input_path,
+        "context",
+        software="vasp",
+        file_type_func=tool._file_type,
+        collect_diagnostics=lambda path: [diagnostic],
+        line=1,
+        character=2,
+    )
+    assert context_payload["context"]["nearby_symbols"]
+
+    fix_payload = ops.operation_path(
+        input_path,
+        "fix",
+        software="vasp",
+        file_type_func=tool._file_type,
+        collect_diagnostics=lambda path: [diagnostic],
+        line=1,
+        character=2,
+    )
+    assert fix_payload["actions"][0]["title"] == "Use a documented VASP keyword"
+    assert fix_payload["actions"][0]["blocking"] is True
+
+    unknown_payload = ops.operation_path(
+        input_path,
+        "unknown",
+        software="vasp",
+        file_type_func=tool._file_type,
+        collect_diagnostics=lambda path: [diagnostic],
+    )
+    assert unknown_payload["capabilities"]["status"] == "unavailable"
+
+
+def test_agent_operations_generic_fallbacks_and_error_boundaries(
+    monkeypatch: pytest.MonkeyPatch, tmp_path
+) -> None:
+    input_path = tmp_path / "INCAR"
+    input_path.write_text(
+        "&SECTION\nkeyword value\nplain\n",
+        encoding="utf-8",
+    )
+    diagnostic = {
+        "code": "VASPWARN",
+        "severity": "warning",
+        "message": "needs review",
+        "range": {
+            "start": {"line": 1, "character": 0},
+            "end": {"line": 1, "character": 7},
+        },
+        "fix_hints": [],
+        "manual_ref": "Manual section",
+    }
+
+    monkeypatch.setattr(ops, "_import_optional", lambda module_name: None)
+
+    complete_payload = ops.operation_path(
+        input_path,
+        "complete",
+        software="vasp",
+        file_type_func=tool._file_type,
+        collect_diagnostics=lambda path: [diagnostic],
+    )
+    labels = {item["label"] for item in complete_payload["items"]}
+    assert {"SECTION", "keyword"} <= labels
+
+    hover_payload = ops.operation_path(
+        input_path,
+        "hover",
+        software="vasp",
+        file_type_func=tool._file_type,
+        collect_diagnostics=lambda path: [diagnostic],
+        line=1,
+        character=2,
+    )
+    assert "VASPWARN" in hover_payload["contents"]
+    assert "Manual section" in hover_payload["contents"]
+
+    symbols_payload = ops.operation_path(
+        input_path,
+        "symbols",
+        software="vasp",
+        file_type_func=tool._file_type,
+        collect_diagnostics=lambda path: [diagnostic],
+    )
+    assert [item["kind"] for item in symbols_payload["items"]] == ["section", "property"]
+
+    fix_payload = ops.operation_path(
+        input_path,
+        "fix",
+        software="vasp",
+        file_type_func=tool._file_type,
+        collect_diagnostics=lambda path: [diagnostic],
+    )
+    assert fix_payload["actions"][0]["title"].startswith("Review this diagnostic")
+
+    failed_fix_payload = ops.operation_path(
+        input_path,
+        "fix",
+        software="vasp",
+        file_type_func=tool._file_type,
+        collect_diagnostics=lambda path: (_ for _ in ()).throw(OSError("boom")),
+    )
+    assert failed_fix_payload["diagnostics"][0]["code"] == "agent.operation.diagnostics_failed"
+
+    missing_payload = ops.operation_path(
+        tmp_path / "missing.INCAR",
+        "complete",
+        software="vasp",
+        file_type_func=tool._file_type,
+        collect_diagnostics=lambda path: [],
+    )
+    assert missing_payload["capabilities"]["status"] == "unavailable"
