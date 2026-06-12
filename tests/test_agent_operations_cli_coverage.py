@@ -56,9 +56,7 @@ def test_agent_operations_cover_context_hover_complete_symbols_and_fix(
                 ]
             )
         if module_name.endswith(".features.hover"):
-            return SimpleNamespace(
-                hover=lambda token, path, text, file_type: f"hover for {token}"
-            )
+            return SimpleNamespace(hover=lambda token, path, text, file_type: f"hover for {token}")
         if module_name.endswith(".features.symbols"):
             return SimpleNamespace(
                 document_symbols=lambda path, text: [
