@@ -47,6 +47,38 @@ def test_validate_patterns_rejects_duplicate_ids() -> None:
         raise AssertionError("duplicate IDs should fail validation")
 
 
+def test_validate_patterns_rejects_invalid_metadata() -> None:
+    base = dict(
+        id="vasp.runtime.invalid",
+        patterns=(r"invalid",),
+        severity="error",
+        confidence=1.0,
+        category="runtime",
+        related_files=("OUTCAR",),
+        suggested_actions=(RuntimeSuggestedAction("Inspect invalid pattern"),),
+    )
+
+    invalid_cases = (
+        ({**base, "patterns": ()}, "has no regex patterns"),
+        ({**base, "severity": "fatal"}, "invalid severity"),
+        ({**base, "confidence": 1.1}, "invalid confidence"),
+    )
+    for kwargs, expected in invalid_cases:
+        try:
+            validate_vasp_error_patterns((VASPErrorPattern(**kwargs),))
+        except ValueError as exc:
+            assert expected in str(exc)
+        else:
+            raise AssertionError(f"{expected} should fail validation")
+
+    try:
+        validate_vasp_error_patterns((VASPErrorPattern(**{**base, "patterns": ("(",)}),))
+    except Exception as exc:
+        assert "missing" in str(exc).lower() or "unterminated" in str(exc).lower()
+    else:
+        raise AssertionError("invalid regex should fail validation")
+
+
 def test_runtime_pattern_matching_is_line_based_and_deterministic() -> None:
     content = """running
 Error EDDDAV: Call to ZHEGV failed. Returncode = 5
