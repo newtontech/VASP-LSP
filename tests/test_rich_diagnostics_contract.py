@@ -127,9 +127,7 @@ def test_serialize_diagnostics_is_stable() -> None:
     assert [item["code"] for item in items] == ["A", "B"]
 
 
-def test_agent_lsp_text_path_and_operations(
-    monkeypatch: pytest.MonkeyPatch, tmp_path
-) -> None:
+def test_agent_lsp_text_path_and_operations(monkeypatch: pytest.MonkeyPatch, tmp_path) -> None:
     calls = []
 
     def fake_check_path(path):

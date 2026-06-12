@@ -225,6 +225,7 @@ def _operation_payload(
         character=character,
     )
 
+
 def check_main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="vasp-lsp-check")
     parser.add_argument("path", type=Path)
