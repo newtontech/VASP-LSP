@@ -2,6 +2,8 @@
 Tests for POSCAR parser.
 """
 
+import pytest
+
 from vasp_lsp.parsers.poscar_parser import POSCARParser
 
 
@@ -36,6 +38,37 @@ Direct
         assert data.coordinate_type == "Direct"
         assert len(data.coordinates) == 1
         assert data.coordinates[0] == [0.0, 0.0, 0.0]
+        assert data.scaled_lattice_vectors() == [
+            [3.0, 0.0, 0.0],
+            [0.0, 3.0, 0.0],
+            [0.0, 0.0, 3.0],
+        ]
+        assert data.cartesian_coordinates() == [[0.0, 0.0, 0.0]]
+
+    def test_cartesian_coordinates_for_si_primitive_direct_cell(self):
+        """Direct coordinates in a non-orthogonal Si primitive cell map to Angstroms."""
+        content = """Si_bulk
+5.43
+0.5 0.5 0.0
+0.0 0.5 0.5
+0.5 0.0 0.5
+Si
+2
+Direct
+0.0 0.0 0.0
+0.25 0.25 0.25
+"""
+        parser = POSCARParser(content)
+        data = parser.parse()
+
+        assert data is not None
+        assert data.coordinates[1] == [0.25, 0.25, 0.25]
+        assert data.scaled_lattice_vectors() == [
+            [2.715, 2.715, 0.0],
+            [0.0, 2.715, 2.715],
+            [2.715, 0.0, 2.715],
+        ]
+        assert data.cartesian_coordinates()[1] == pytest.approx([1.3575, 1.3575, 1.3575])
 
     def test_parse_vasp4_format(self):
         """Test parsing VASP 4 format (no atom types)."""
@@ -97,6 +130,26 @@ Cartesian
         assert data is not None
         assert data.coordinate_type == "Cartesian"
         assert data.coordinates[0] == [1.0, 1.0, 1.0]
+        assert data.cartesian_coordinates()[0] == [1.0, 1.0, 1.0]
+
+    def test_cartesian_coordinates_apply_scale_factor(self):
+        """Cartesian POSCAR coordinates are still scaled by the POSCAR scale factor."""
+        content = """Cartesian scaled
+2.0
+1.0 0.0 0.0
+0.0 1.0 0.0
+0.0 0.0 1.0
+H
+1
+Cartesian
+0.5 0.25 0.125
+"""
+        parser = POSCARParser(content)
+        data = parser.parse()
+
+        assert data is not None
+        assert data.coordinates[0] == [0.5, 0.25, 0.125]
+        assert data.cartesian_coordinates()[0] == [1.0, 0.5, 0.25]
 
     def test_parse_selective_dynamics(self):
         """Test parsing with selective dynamics."""
