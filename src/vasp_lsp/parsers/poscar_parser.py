@@ -25,6 +25,37 @@ class POSCARData:
     coord_type_line: int = 7
     has_selective_dynamics: bool = False
 
+    def scaled_lattice_vectors(self) -> List[List[float]]:
+        """Return lattice vectors after applying the POSCAR scale factor."""
+        return [
+            [component * self.scale_factor for component in vector]
+            for vector in self.lattice_vectors
+        ]
+
+    def cartesian_coordinates(self) -> List[List[float]]:
+        """Return atom coordinates in Cartesian Angstroms.
+
+        Raw ``coordinates`` remain in the source coordinate system. This helper
+        is intended for renderers and downstream tools that need canonical
+        Cartesian positions.
+        """
+        if self.coordinate_type == "Cartesian":
+            return [
+                [component * self.scale_factor for component in coordinate]
+                for coordinate in self.coordinates
+            ]
+
+        lattice = self.scaled_lattice_vectors()
+        return [
+            [
+                coordinate[0] * lattice[0][axis]
+                + coordinate[1] * lattice[1][axis]
+                + coordinate[2] * lattice[2][axis]
+                for axis in range(3)
+            ]
+            for coordinate in self.coordinates
+        ]
+
 
 class POSCARParser:
     """Parser for VASP POSCAR/CONTCAR structure files."""
