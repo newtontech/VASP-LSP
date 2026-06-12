@@ -6,7 +6,7 @@ A Language Server Protocol (LSP) implementation for VASP (Vienna Ab initio Simul
 
 VASP-LSP provides intelligent code editing features for VASP calculation input files:
 - **INCAR** - Input parameters with autocomplete and validation
-- **POSCAR** - Structure file syntax highlighting  
+- **POSCAR** - Structure file syntax highlighting
 - **KPOINTS** - K-point grid configuration
 
 ## Features
