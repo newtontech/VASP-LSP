@@ -1,3 +1,5 @@
+"""Coverage for agent-facing provider dispatch and CLI JSON operations."""
+
 from __future__ import annotations
 
 import json
